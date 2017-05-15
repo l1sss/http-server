@@ -15,7 +15,7 @@ public class HelloWorldExample {
                     @Override
                     public void handle(Request request, Response response) throws Exception {
                         Writer writer = new OutputStreamWriter(response.getOutputStream());
-                        writer.write(Http.OK_HEADER + "Hello World!");
+                        writer.write(Http.OK_HEADER + "Hello, go playing CS");
                         writer.flush();
                     }
                 });
