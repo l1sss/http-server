@@ -17,6 +17,7 @@ public class Request {
     final Socket socket;
     HttpMethod method;
     URI path;
+    Body body = new Body();
 
     Map<String, String> headers;
     Map<String, String> args;
@@ -51,11 +52,21 @@ public class Request {
         return path.getPath();
     }
 
+    /**
+     * @return Request headers.
+     */
     public Map<String, String> getHeaders() {
         if (headers == null)
             return Collections.emptyMap();
 
         return Collections.unmodifiableMap(headers);
+    }
+
+    /**
+     * @return Request body.
+     */
+    public Body getBody() {
+        return body;
     }
 
     void addHeader(String key, String value) {

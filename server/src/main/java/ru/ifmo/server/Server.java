@@ -48,6 +48,8 @@ public class Server implements Closeable {
     private static final char LF = '\n';
     private static final char CR = '\r';
     private static final String CRLF = "" + CR + LF;
+    private static final String CONTENT_LENGTH = "Content-Length";
+    private static final String CONTENT_TYPE = "Content-Type";
     private static final char AMP = '&';
     private static final char EQ = '=';
     private static final char HEADER_VALUE_SEPARATOR = ':';
@@ -178,13 +180,20 @@ public class Server implements Closeable {
         Request req = new Request(socket);
         StringBuilder sb = new StringBuilder(READER_BUF_SIZE); // TODO
 
-        while (readLine(reader, sb) > 0) {
+        while (readLine(reader, sb, req) > 0) {
             if (req.method == null)
                 parseRequestLine(req, sb);
             else
                 parseHeader(req, sb);
 
             sb.setLength(0);
+        }
+
+        if (req.getMethod() == HttpMethod.POST) {
+            if (req.getHeaders().containsKey(CONTENT_LENGTH))
+                req.getBody().contentLength = Integer.parseInt(req.getHeaders().get(CONTENT_LENGTH));
+
+            parseBody(reader, sb, req);
         }
 
         return req;
@@ -197,9 +206,9 @@ public class Server implements Closeable {
         for (int i = 0; i < len; i++) {
             if (sb.charAt(i) == SPACE) {
                 if (req.method == null)
-                    req.method = HttpMethod.valueOf(sb.substring(start, i));
+                    req.method = HttpMethod.valueOf(sb.substring(start, i)); // Parse method
                 else if (req.path == null) {
-                    req.path = new URI(sb.substring(start, i));
+                    req.path = new URI(sb.substring(start, i)); // Parse path
 
                     break; // Ignore protocol for now
                 }
@@ -242,8 +251,8 @@ public class Server implements Closeable {
     private void parseHeader(Request req, StringBuilder sb) {
         String key = null;
 
-        int len = sb.length();
         int start = 0;
+        int len = sb.length();
 
         for (int i = 0; i < len; i++) {
             if (sb.charAt(i) == HEADER_VALUE_SEPARATOR) {
@@ -258,18 +267,35 @@ public class Server implements Closeable {
         req.addHeader(key, sb.substring(start, len).trim());
     }
 
-    private int readLine(InputStreamReader in, StringBuilder sb) throws IOException {
+    private void parseBody(InputStreamReader in, StringBuilder sb, Request request) throws IOException {
         int c;
         int count = 0;
 
-        while ((c = in.read()) >= 0) {
-            if (c == LF)
-                break;
+        while ((c = in.read()) > 0) {
 
             sb.append((char) c);
 
             count++;
+            if (count >= request.getBody().contentLength)
+                break;
         }
+
+        request.getBody().stringBody = sb.toString();
+    }
+
+    private int readLine(InputStreamReader in, StringBuilder sb, Request request) throws IOException {
+        int c;
+        int count = 0;
+
+        while ((c = in.read()) >= 0) {
+            if (c == LF) {
+                break;
+            }
+
+            sb.append((char) c);
+            count++;
+        }
+
 
         if (count > 0 && sb.charAt(count - 1) == CR)
             sb.setLength(--count);
@@ -295,7 +321,15 @@ public class Server implements Closeable {
     }
 
     private boolean isMethodSupported(HttpMethod method) {
-        return method == HttpMethod.GET;
+        return (method == HttpMethod.GET || method == HttpMethod.POST);
+
+        /*for (HttpMethod m : HttpMethod.values()) {
+            if (m == method)
+
+                return true;
+        }
+
+        return false;*/
     }
 
     private class ConnectionHandler implements Runnable {
