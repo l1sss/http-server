@@ -4,7 +4,7 @@ import ru.ifmo.server.*;
 
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.util.Map;
+import java.util.Arrays;
 
 /**
  * Simple hello world example.
@@ -23,7 +23,7 @@ public class HelloWorldExample {
 
                         else if (request.getMethod() == HttpMethod.POST) {
                             Writer writer = new OutputStreamWriter(response.getOutputStream());
-                            writer.write(Http.OK_HEADER + request.getBody().getStringBody());
+                            writer.write(Http.OK_HEADER + Arrays.toString(request.getBody().getData()));
                             writer.flush();
                         }
                     }

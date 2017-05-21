@@ -4,14 +4,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.ifmo.server.util.Utils;
 
-import java.io.Closeable;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -180,7 +178,7 @@ public class Server implements Closeable {
         Request req = new Request(socket);
         StringBuilder sb = new StringBuilder(READER_BUF_SIZE); // TODO
 
-        while (readLine(reader, sb, req) > 0) {
+        while (readLine(reader, sb) > 0) {
             if (req.method == null)
                 parseRequestLine(req, sb);
             else
@@ -190,8 +188,11 @@ public class Server implements Closeable {
         }
 
         if (req.getMethod() == HttpMethod.POST) {
-            if (req.getHeaders().containsKey(CONTENT_LENGTH))
-                req.getBody().contentLength = Integer.parseInt(req.getHeaders().get(CONTENT_LENGTH));
+            req.getBody().contentType = req.getHeaders().get(CONTENT_TYPE);
+            req.getBody().contentLength = Integer.parseInt(req.getHeaders().get(CONTENT_LENGTH));
+
+            if (req.getBody().getContentType().equals("image/jpeg"))
+                parseByteBody(reader, req);
 
             parseBody(reader, sb, req);
         }
@@ -271,23 +272,47 @@ public class Server implements Closeable {
         int c;
         int count = 0;
 
-        while ((c = in.read()) > 0) {
+        if (request.getBody().contentLength == 0)
+            return;
 
+        while ((c = in.read()) > 0) {
             sb.append((char) c);
 
             count++;
-            if (count >= request.getBody().contentLength)
+            if (count == request.getBody().contentLength)
                 break;
         }
 
         request.getBody().stringBody = sb.toString();
     }
 
-    private int readLine(InputStreamReader in, StringBuilder sb, Request request) throws IOException {
+    private void parseByteBody(InputStreamReader in, Request request) throws IOException {
+        ByteArrayOutputStream bout = new ByteArrayOutputStream();
+
         int c;
         int count = 0;
 
-        while ((c = in.read()) >= 0) {
+        if (request.getBody().contentLength == 0)
+            return;
+
+        while ((c = in.read()) > 0) {
+            bout.write(c);
+
+            count++;
+            if (count == request.getBody().contentLength)
+                break;
+        }
+
+        request.getBody().data = bout.toByteArray();
+        System.out.println(Arrays.toString(bout.toByteArray()));
+    }
+
+
+    private int readLine(InputStreamReader in, StringBuilder sb) throws IOException {
+        int c;
+        int count = 0;
+
+        while ((c = in.read()) > 0) {
             if (c == LF) {
                 break;
             }
@@ -295,7 +320,6 @@ public class Server implements Closeable {
             sb.append((char) c);
             count++;
         }
-
 
         if (count > 0 && sb.charAt(count - 1) == CR)
             sb.setLength(--count);

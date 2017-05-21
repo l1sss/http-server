@@ -17,13 +17,14 @@ public class Request {
     final Socket socket;
     HttpMethod method;
     URI path;
-    Body body = new Body();
+    Body body;
 
     Map<String, String> headers;
     Map<String, String> args;
 
     Request(Socket socket) {
         this.socket = socket;
+        this.body = new Body();
     }
 
     /**

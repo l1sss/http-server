@@ -12,4 +12,12 @@ public class Body {
     public String getStringBody() {
         return stringBody;
     }
+
+    public String getContentType() {
+        return contentType;
+    }
+
+    public byte[] getData() {
+        return data;
+    }
 }
