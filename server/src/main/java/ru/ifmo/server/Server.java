@@ -46,8 +46,6 @@ public class Server implements Closeable {
     private static final char LF = '\n';
     private static final char CR = '\r';
     private static final String CRLF = "" + CR + LF;
-    private static final String CONTENT_LENGTH = "Content-Length";
-    private static final String CONTENT_TYPE = "Content-Type";
     private static final char AMP = '&';
     private static final char EQ = '=';
     private static final char HEADER_VALUE_SEPARATOR = ':';
@@ -187,10 +185,7 @@ public class Server implements Closeable {
             sb.setLength(0);
         }
 
-        if (req.getMethod() == HttpMethod.POST) {
-            req.getBody().contentType = req.getHeaders().get(CONTENT_TYPE);
-            req.getBody().contentLength = Integer.parseInt(req.getHeaders().get(CONTENT_LENGTH));
-
+        if (req.getMethod() == HttpMethod.POST && req.getBody().contentType != null) {
             if (req.getBody().getContentType().equals("image/jpeg"))
                 parseByteBody(reader, req);
 

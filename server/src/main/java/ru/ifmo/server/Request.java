@@ -8,6 +8,9 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import static ru.ifmo.server.Http.CONTENT_LENGTH;
+import static ru.ifmo.server.Http.CONTENT_TYPE;
+
 /**
  * Keeps request information: method, headers, params
  * and provides {@link java.io.InputStream} to get additional data
@@ -73,6 +76,12 @@ public class Request {
     void addHeader(String key, String value) {
         if (headers == null)
             headers = new LinkedHashMap<>();
+
+        if (key.equals(CONTENT_TYPE))
+            body.contentType = value;
+
+        else if (key.equals(CONTENT_LENGTH))
+            body.contentLength = Integer.parseInt(value);
 
         headers.put(key, value);
     }

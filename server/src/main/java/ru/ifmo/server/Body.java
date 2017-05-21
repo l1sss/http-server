@@ -17,6 +17,10 @@ public class Body {
         return contentType;
     }
 
+    public int getContentLength() {
+        return contentLength;
+    }
+
     public byte[] getData() {
         return data;
     }

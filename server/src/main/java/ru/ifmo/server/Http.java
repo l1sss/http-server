@@ -12,6 +12,9 @@ public class Http {
     public static final int SC_SERVER_ERROR = 500;
     public static final int SC_NOT_IMPLEMENTED = 501;
 
+    public static final String CONTENT_LENGTH = "Content-Length";
+    public static final String CONTENT_TYPE = "Content-Type";
+
     /** OK header that preceded rest response data. */
     public static final String OK_HEADER = "HTTP/1.0 200 OK\r\n\r\n";
 }
