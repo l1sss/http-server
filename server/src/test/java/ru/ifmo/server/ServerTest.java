@@ -151,6 +151,4 @@ public class ServerTest {
         assertStatusCode(HttpStatus.SC_NOT_IMPLEMENTED, response);
         assertNotNull(EntityUtils.toString(response.getEntity()));
     }
-
-
 }

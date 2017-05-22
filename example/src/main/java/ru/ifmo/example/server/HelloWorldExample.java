@@ -23,12 +23,12 @@ public class HelloWorldExample {
 
                         else if (request.getMethod() == HttpMethod.POST) {
                             Writer writer = new OutputStreamWriter(response.getOutputStream());
-                            writer.write(Http.OK_HEADER + "Hello POST\n" +
+                            writer.write(Http.OK_HEADER + "Hello POST!\n" +
                                     "Content type: " +
                                     request.getBody().getContentType() +
                                     "\nContent length: " +
                                     request.getBody().getContentLength() +
-                                    "\n" +
+                                    "\nBody: " +
                                     request.getBody().getStringBody());
                             writer.flush();
                         }

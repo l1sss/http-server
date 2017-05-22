@@ -186,8 +186,8 @@ public class Server implements Closeable {
         }
 
         if (req.getMethod() == HttpMethod.POST && req.getBody().contentType != null) {
-            if (req.getBody().getContentType().equals("image/jpeg"))
-                parseByteBody(reader, req);
+            /*if (req.getBody().getContentType().equals("image/jpeg"))
+                parseByteBody(reader, req);*/
 
             parseBody(reader, sb, req);
         }
@@ -281,7 +281,7 @@ public class Server implements Closeable {
         request.getBody().stringBody = sb.toString();
     }
 
-    private void parseByteBody(InputStreamReader in, Request request) throws IOException {
+    /*private void parseByteBody(InputStreamReader in, Request request) throws IOException {
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
 
         int c;
@@ -300,7 +300,7 @@ public class Server implements Closeable {
 
         request.getBody().data = bout.toByteArray();
         System.out.println(Arrays.toString(bout.toByteArray()));
-    }
+    }*/
 
 
     private int readLine(InputStreamReader in, StringBuilder sb) throws IOException {
