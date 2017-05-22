@@ -1,5 +1,7 @@
 package ru.ifmo.server;
 
+import ru.ifmo.server.Filters.Filter;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -7,7 +9,9 @@ import java.util.Map;
  * Holds server configs: local port, handler mappings, etc.
  */
 public class ServerConfig {
-    /** Default local port. */
+    /**
+     * Default local port.
+     */
     public static final int DFLT_PORT = 8080;
 
     private int port = DFLT_PORT;
@@ -48,7 +52,7 @@ public class ServerConfig {
     /**
      * Add handler mapping.
      *
-     * @param path Path which will be associated with this handler.
+     * @param path    Path which will be associated with this handler.
      * @param handler Request handler.
      * @return Itself for chaining.
      */
@@ -108,6 +112,16 @@ public class ServerConfig {
 
         return this;
     }
+
+
+    public void setFilters(Filter... filters) {
+
+        for (Filter filter : filters) {
+            filter.setNextFilter(filter);
+        }
+
+    }
+
 
     @Override
     public String toString() {
