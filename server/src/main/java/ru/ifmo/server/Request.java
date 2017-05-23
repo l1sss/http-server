@@ -10,6 +10,7 @@ import java.util.Map;
 
 import static ru.ifmo.server.Http.CONTENT_LENGTH;
 import static ru.ifmo.server.Http.CONTENT_TYPE;
+import static ru.ifmo.server.Http.CONTENT_TYPE_SEPARATOR;
 
 /**
  * Keeps request information: method, headers, params
@@ -77,13 +78,32 @@ public class Request {
         if (headers == null)
             headers = new LinkedHashMap<>();
 
-        if (key.equals(CONTENT_TYPE))
-            body.contentType = value;
-
+        if (key.equals(CONTENT_TYPE)) {
+            body.setContentType(value);
+            body.setContentFormat(parseFormat(value));
+        }
         else if (key.equals(CONTENT_LENGTH))
-            body.contentLength = Integer.parseInt(value);
+            body.setContentLength(Integer.parseInt(value));
 
         headers.put(key, value);
+    }
+
+    /**
+     *
+     * @param line - body content-type
+     * @return String content format.
+     */
+    private String parseFormat(String line) {
+        String format = null;
+
+        int len = line.length();
+
+        for (int i = 0; i < len; i++) {
+            if (line.charAt(i) == CONTENT_TYPE_SEPARATOR)
+                format = line.substring(i + 1, line.length()).trim();
+        }
+
+        return format;
     }
 
     void addArgument(String key, String value) {

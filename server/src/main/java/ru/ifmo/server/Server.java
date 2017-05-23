@@ -9,12 +9,11 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static ru.ifmo.server.util.Utils.htmlMessage;
 import static ru.ifmo.server.Http.*;
+import static ru.ifmo.server.util.Utils.htmlMessage;
 
 /**
  * Ifmo Web Server.
@@ -171,12 +170,12 @@ public class Server implements Closeable {
     }
 
     private Request parseRequest(Socket socket) throws IOException, URISyntaxException {
-        InputStreamReader reader = new InputStreamReader(socket.getInputStream());
+        InputStream in = socket.getInputStream();
 
         Request req = new Request(socket);
         StringBuilder sb = new StringBuilder(READER_BUF_SIZE); // TODO
 
-        while (readLine(reader, sb) > 0) {
+        while (readLine(in, sb) > 0) {
             if (req.method == null)
                 parseRequestLine(req, sb);
             else
@@ -185,11 +184,11 @@ public class Server implements Closeable {
             sb.setLength(0);
         }
 
-        if (req.getMethod() == HttpMethod.POST && req.getBody().contentType != null) {
-            /*if (req.getBody().getContentType().equals("image/jpeg"))
-                parseByteBody(reader, req);*/
-
-            parseBody(reader, sb, req);
+        if (req.getMethod() == HttpMethod.POST || req.getMethod() == HttpMethod.PUT && req.getBody().reasonToParse()) {
+            if (req.getBody().getContentType().contains("text"))
+                parseTxtBody(in, sb, req);
+            else
+                parseBinBody(in, req);
         }
 
         return req;
@@ -263,47 +262,49 @@ public class Server implements Closeable {
         req.addHeader(key, sb.substring(start, len).trim());
     }
 
-    private void parseBody(InputStreamReader in, StringBuilder sb, Request request) throws IOException {
+    private void parseTxtBody(InputStream in, StringBuilder sb, Request request) throws IOException {
+        InputStreamReader reader = new InputStreamReader(in);
+
+        int contentLength = request.getBody().getContentLength();
+
         int c;
         int count = 0;
 
-        if (request.getBody().contentLength == 0)
-            return;
-
-        while ((c = in.read()) > 0) {
+        while ((c = reader.read()) > 0) {
             sb.append((char) c);
 
             count++;
-            if (count == request.getBody().contentLength)
+            if (count == contentLength)
                 break;
         }
 
-        request.getBody().stringBody = sb.toString();
+        request.getBody().setTxtContent(sb.toString());
     }
 
-    /*private void parseByteBody(InputStreamReader in, Request request) throws IOException {
+    private void parseBinBody(InputStream in, Request request) throws IOException {
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
 
-        int c;
+        int contentLength = request.getBody().getContentLength();
+
+        byte[] buf = new byte[1024];
+        int len;
         int count = 0;
 
-        if (request.getBody().contentLength == 0)
-            return;
+        while ((len = in.read(buf)) > 0) {
+            bout.write(buf, 0, len);
 
-        while ((c = in.read()) > 0) {
-            bout.write(c);
-
-            count++;
-            if (count == request.getBody().contentLength)
+            count += len;
+            if (count == contentLength)
                 break;
+
+            if (LOG.isTraceEnabled())
+                LOG.trace("Count = {}, content length = {}", count, contentLength);
         }
 
-        request.getBody().data = bout.toByteArray();
-        System.out.println(Arrays.toString(bout.toByteArray()));
-    }*/
+        request.getBody().setBinContent(bout.toByteArray());
+    }
 
-
-    private int readLine(InputStreamReader in, StringBuilder sb) throws IOException {
+    private int readLine(InputStream in, StringBuilder sb) throws IOException {
         int c;
         int count = 0;
 
@@ -340,7 +341,7 @@ public class Server implements Closeable {
     }
 
     private boolean isMethodSupported(HttpMethod method) {
-        return (method == HttpMethod.GET || method == HttpMethod.POST);
+        return (method == HttpMethod.GET || method == HttpMethod.POST || method == HttpMethod.PUT);
 
         /*for (HttpMethod m : HttpMethod.values()) {
             if (m == method)
