@@ -25,4 +25,16 @@ public class Response {
             throw new ServerException("Cannot get output stream", e);
         }
     }
+
+    public void setCharSet() {
+
+    }
+
+    public void sendRedirect(String location) {
+
+    }
+
+    public void forward(String resource){
+
+    }
 }

@@ -2,33 +2,34 @@ package ru.ifmo.server.Filters;
 
 import ru.ifmo.server.Request;
 import ru.ifmo.server.Response;
-import ru.ifmo.server.ServerConfig;
 
-public class FilterChar extends Filter {
+public class RedirectingFilter extends Filter {
 
-    public FilterChar() {
+    public RedirectingFilter() {
     }
 
-    public FilterChar(Request request, Response response) {
+    public RedirectingFilter(Request request, Response response) {
         this.request = request;
         this.response = response;
     }
-
 
     @Override
     public void init() {
         this.active = true;
     }
 
-
     @Override
     void doFilter(Request request, Response response) {
         init();
-        request.getHeaders();
+        if (this.active) {
+
+            response.sendRedirect("yandex.ru");
+            }
 
 
         if (nextFilter != null)
             nextFilter.doFilter(request, response);
+
     }
 
     @Override
@@ -39,5 +40,16 @@ public class FilterChar extends Filter {
     @Override
     void destroy() {
         this.active = false;
+    }
+
+
+    @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return super.equals(obj);
     }
 }

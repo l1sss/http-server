@@ -1,15 +1,15 @@
 package ru.ifmo.server.Filters;
 
-import ru.ifmo.server.Http;
 import ru.ifmo.server.Request;
 import ru.ifmo.server.Response;
 
-public class FilterLogin extends Filter {
+public class EncodingFilter extends Filter {
 
-    public FilterLogin() {
+    String code = request.getBody().getCharSet();
+    public EncodingFilter() {
     }
 
-    public FilterLogin(Request request, Response response) {
+    public EncodingFilter(Request request, Response response) {
         this.request = request;
         this.response = response;
     }
@@ -20,9 +20,19 @@ public class FilterLogin extends Filter {
         this.active = true;
     }
 
+
     @Override
     void doFilter(Request request, Response response) {
         init();
+
+
+      String requestCharSet = request.getBody().getCharSet();
+
+      if(requestCharSet!=null && !(requestCharSet ).equalsIgnoreCase(code)){
+         request.setCharSet();
+         response.setCharSet();
+      }
+
 
         if (nextFilter != null)
             nextFilter.doFilter(request, response);
@@ -30,8 +40,7 @@ public class FilterLogin extends Filter {
 
     @Override
     public void setNextFilter(Filter nextFilter) {
-
-
+        this.nextFilter = nextFilter;
     }
 
     @Override

@@ -1,5 +1,4 @@
 package ru.ifmo.server.Filters;
-
 import ru.ifmo.server.Request;
 import ru.ifmo.server.Response;
 
