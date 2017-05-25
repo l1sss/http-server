@@ -221,6 +221,7 @@ public class Server implements Closeable {
             start = 0;
 
             String key = null;
+            String value = null;
 
             for (int i = 0; i < query.length(); i++) {
                 boolean last = i == query.length() - 1;
@@ -231,7 +232,9 @@ public class Server implements Closeable {
                     start = i + 1;
                 }
                 else if (key != null && (query.charAt(i) == AMP || last)) {
-                    req.addArgument(key, query.substring(start, last ? i + 1 : i));
+                    value = query.substring(start, last ? i + 1 : i);
+                    if (value.equals("")) value = null;
+                    req.addArgument(key, value);
 
                     key = null;
                     start = i + 1;
