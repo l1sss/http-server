@@ -3,9 +3,9 @@ package ru.ifmo.server;
 import static ru.ifmo.server.Http.OK_HEADER;
 
 /**
- * Responds with OK status code, test text in body and parsed params.
+ * Created by l1s on 25.05.17.
  */
-public class SuccessHandler implements Handler {
+public class PostHandler implements Handler {
     public static final String OPEN_HTML = "<html><body>";
     public static final String CLOSE_HTML = "</html></body>";
 
@@ -14,7 +14,10 @@ public class SuccessHandler implements Handler {
     @Override
     public void handle(Request request, Response response) throws Exception {
         response.getOutputStream().write((OK_HEADER + TEST_RESPONSE +
-                "<br>" + request.getBody().getTxtContent() + CLOSE_HTML).getBytes());
+                "<br>Arguments: " + request.getArguments() +
+                "<br>Content type: " + request.getBody().getContentType() +
+                "<br>Content length: " + request.getBody().getContentLength() +
+                "<br>Text content: " + request.getBody().getTxtContent() + CLOSE_HTML).getBytes());
         response.getOutputStream().flush();
     }
 }

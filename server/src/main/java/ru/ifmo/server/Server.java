@@ -184,7 +184,7 @@ public class Server implements Closeable {
             sb.setLength(0);
         }
 
-        if (req.getMethod() == HttpMethod.POST || req.getMethod() == HttpMethod.PUT && req.getBody().reasonToParse()) {
+        if ((req.getMethod() == HttpMethod.POST || req.getMethod() == HttpMethod.PUT) && req.getBody().reasonToParse()) {
             if (req.getBody().getContentType().contains("text"))
                 parseTxtBody(in, sb, req);
             else
@@ -267,18 +267,18 @@ public class Server implements Closeable {
 
         int contentLength = request.getBody().getContentLength();
 
-        int c;
+        int len;
         int count = 0;
 
-        while ((c = reader.read()) > 0) {
-            sb.append((char) c);
+        while ((len = reader.read()) > 0) {
+            sb.append((char) len);
 
             count++;
             if (count == contentLength)
                 break;
         }
 
-        request.getBody().setTxtContent(sb.toString());
+        request.getBody().txtContent = sb.toString();
     }
 
     private void parseBinBody(InputStream in, Request request) throws IOException {
@@ -297,11 +297,11 @@ public class Server implements Closeable {
             if (count == contentLength)
                 break;
 
-            if (LOG.isTraceEnabled())
-                LOG.trace("Count = {}, content length = {}", count, contentLength);
+            /*if (LOG.isTraceEnabled())
+                LOG.trace("Count = {}, content length = {}", count, contentLength);*/
         }
 
-        request.getBody().setBinContent(bout.toByteArray());
+        request.getBody().binContent = bout.toByteArray();
     }
 
     private int readLine(InputStream in, StringBuilder sb) throws IOException {

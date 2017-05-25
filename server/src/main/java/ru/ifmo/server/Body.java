@@ -1,53 +1,54 @@
 package ru.ifmo.server;
 
+import static ru.ifmo.server.Http.CONTENT_TYPE_SEPARATOR;
+
 /**
  * Created by l1s on 19.05.17.
  */
 public class Body {
-    private String contentType;
-    private String txtContent;
-    private String contentFormat;
-    private int contentLength;
-    private byte[] binContent;
+    String contentType;
+    String txtContent;
+    int contentLength;
+    byte[] binContent;
 
     public String getContentType() {
         return contentType;
-    }
-
-    public void setContentType(String contentType) {
-        this.contentType = contentType;
     }
 
     public String getTxtContent() {
         return txtContent;
     }
 
-    public void setTxtContent(String txtContent) {
-        this.txtContent = txtContent;
-    }
-
     public String getContentFormat() {
-        return contentFormat;
-    }
-
-    public void setContentFormat(String contentFormat) {
-        this.contentFormat = contentFormat;
+        return parseFormat();
     }
 
     public int getContentLength() {
         return contentLength;
     }
 
-    public void setContentLength(int contentLength) {
-        this.contentLength = contentLength;
-    }
-
     public byte[] getBinContent() {
         return binContent;
     }
 
-    public void setBinContent(byte[] binContent) {
-        this.binContent = binContent;
+    /**
+     *
+     * @return String content format
+     */
+    private String parseFormat() {
+        if (contentType == null)
+            return "content type not found";
+
+        String format = null;
+
+        int len = contentType.length();
+
+        for (int i = 0; i < len; i++) {
+            if (contentType.charAt(i) == CONTENT_TYPE_SEPARATOR)
+                format = contentType.substring(i + 1, contentType.length()).trim();
+        }
+
+        return format;
     }
 
     public boolean reasonToParse() {
