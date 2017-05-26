@@ -70,6 +70,9 @@ public class Request {
      * @return Request body.
      */
     public Body getBody() {
+        if (body == null)
+            return new Body();
+
         return body;
     }
 

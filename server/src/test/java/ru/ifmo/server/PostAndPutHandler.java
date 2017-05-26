@@ -5,7 +5,7 @@ import static ru.ifmo.server.Http.OK_HEADER;
 /**
  * Created by l1s on 25.05.17.
  */
-public class PostHandler implements Handler {
+public class PostAndPutHandler implements Handler {
     public static final String OPEN_HTML = "<html><body>";
     public static final String CLOSE_HTML = "</html></body>";
 

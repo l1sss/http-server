@@ -4,7 +4,10 @@ import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpStatus;
-import org.apache.http.client.methods.*;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -39,7 +42,7 @@ public class ServerTest {
         ServerConfig cfg = new ServerConfig()
                 .addHandler(SUCCESS_URL, new SuccessHandler())
                 .addHandler(SERVER_ERROR_URL, new FailHandler())
-                .addHandler(POST_URL, new PostHandler());
+                .addHandler(POST_URL, new PostAndPutHandler());
 
         server = Server.start(cfg);
         client = HttpClients.createDefault();
@@ -54,7 +57,7 @@ public class ServerTest {
         client = null;
     }
 
-    /*@Test //some error...
+    @Test //some error...
     public void testSuccess() throws Exception {
         // TODO test headers
         URI uri = new URIBuilder(SUCCESS_URL)
@@ -75,7 +78,7 @@ public class ServerTest {
                         "<br>{1=1, 2=2, testArg1=testValue1, testArg2=2, testArg3=testVal3, testArg4=null}" +
                         SuccessHandler.CLOSE_HTML,
                 EntityUtils.toString(response.getEntity()));
-    }*/
+    }
 
     @Test
     public void testPostWithEmptyBody() throws Exception {
@@ -86,12 +89,12 @@ public class ServerTest {
         CloseableHttpResponse response = client.execute(host, post);
 
         assertStatusCode(HttpStatus.SC_OK, response);
-        assertEquals(PostHandler.TEST_RESPONSE +
+        assertEquals(PostAndPutHandler.TEST_RESPONSE +
                         "<br>Arguments: {}" +
                         "<br>Content type: null" +
                         "<br>Content length: 0" +
                         "<br>Text content: null" +
-                        PostHandler.CLOSE_HTML,
+                        PostAndPutHandler.CLOSE_HTML,
                 EntityUtils.toString(response.getEntity()));
     }
 
@@ -108,12 +111,12 @@ public class ServerTest {
         CloseableHttpResponse response = client.execute(host, post);
 
         assertStatusCode(HttpStatus.SC_OK, response);
-        assertEquals(PostHandler.TEST_RESPONSE +
+        assertEquals(PostAndPutHandler.TEST_RESPONSE +
                     "<br>Arguments: {iLoveWriteCode=true, iLoveWriteTests=false, noMoreTests=null}" +
                     "<br>Content type: null" +
                     "<br>Content length: 0" +
                     "<br>Text content: null" +
-                    PostHandler.CLOSE_HTML,
+                    PostAndPutHandler.CLOSE_HTML,
                 EntityUtils.toString(response.getEntity()));
     }
 
@@ -128,12 +131,12 @@ public class ServerTest {
         CloseableHttpResponse response = client.execute(host, post);
 
         assertStatusCode(HttpStatus.SC_OK, response);
-        assertEquals(PostHandler.TEST_RESPONSE +
+        assertEquals(PostAndPutHandler.TEST_RESPONSE +
                         "<br>Arguments: {}" +
                         "<br>Content type: text/plain; charset=ISO-8859-1" +
                         "<br>Content length: 25" +
                         "<br>Text content: some text in request body" +
-                        PostHandler.CLOSE_HTML,
+                        PostAndPutHandler.CLOSE_HTML,
                 EntityUtils.toString(response.getEntity()));
     }
 
@@ -152,12 +155,96 @@ public class ServerTest {
         CloseableHttpResponse response = client.execute(host, post);
 
         assertStatusCode(HttpStatus.SC_OK, response);
-        assertEquals(PostHandler.TEST_RESPONSE +
+        assertEquals(PostAndPutHandler.TEST_RESPONSE +
                         "<br>Arguments: {test1=noMore, test2=null, test3=soBoring}" +
                         "<br>Content type: text/plain; charset=ISO-8859-1" +
                         "<br>Content length: 25" +
                         "<br>Text content: some text in request body" +
-                        PostHandler.CLOSE_HTML,
+                        PostAndPutHandler.CLOSE_HTML,
+                EntityUtils.toString(response.getEntity()));
+    }
+
+    @Test
+    public void testPutWithEmptyBody() throws Exception {
+        URI uri = new URI(POST_URL);
+
+        HttpPut put = new HttpPut(uri);
+
+        CloseableHttpResponse response = client.execute(host, put);
+
+        assertStatusCode(HttpStatus.SC_OK, response);
+        assertEquals(PostAndPutHandler.TEST_RESPONSE +
+                        "<br>Arguments: {}" +
+                        "<br>Content type: null" +
+                        "<br>Content length: 0" +
+                        "<br>Text content: null" +
+                        PostAndPutHandler.CLOSE_HTML,
+                EntityUtils.toString(response.getEntity()));
+    }
+
+    @Test
+    public void testPutWithEmptyBodyAndSomeArguments() throws Exception {
+        URI uri = new URIBuilder(POST_URL)
+                .addParameter("iLoveWriteCode", "true")
+                .addParameter("iLoveWriteTests", "false")
+                .addParameter("noMoreTests", "")
+                .build();
+
+        HttpPut put = new HttpPut(uri);
+
+        CloseableHttpResponse response = client.execute(host, put);
+
+        assertStatusCode(HttpStatus.SC_OK, response);
+        assertEquals(PostAndPutHandler.TEST_RESPONSE +
+                        "<br>Arguments: {iLoveWriteCode=true, iLoveWriteTests=false, noMoreTests=null}" +
+                        "<br>Content type: null" +
+                        "<br>Content length: 0" +
+                        "<br>Text content: null" +
+                        PostAndPutHandler.CLOSE_HTML,
+                EntityUtils.toString(response.getEntity()));
+    }
+
+    @Test
+    public void testPutWithTextContent() throws Exception {
+        URI uri = new URI(POST_URL);
+
+        HttpPut put = new HttpPut(uri);
+        StringEntity entity = new StringEntity("some text in request body");
+        put.setEntity(entity);
+
+        CloseableHttpResponse response = client.execute(host, put);
+
+        assertStatusCode(HttpStatus.SC_OK, response);
+        assertEquals(PostAndPutHandler.TEST_RESPONSE +
+                        "<br>Arguments: {}" +
+                        "<br>Content type: text/plain; charset=ISO-8859-1" +
+                        "<br>Content length: 25" +
+                        "<br>Text content: some text in request body" +
+                        PostAndPutHandler.CLOSE_HTML,
+                EntityUtils.toString(response.getEntity()));
+    }
+
+    @Test
+    public void testPutWithTextContentAndSomeArguments() throws Exception {
+        URI uri = new URIBuilder(POST_URL)
+                .addParameter("test1", "noMore")
+                .addParameter("test2", "") //!!!
+                .addParameter("test3", "soBoring")
+                .build();
+
+        HttpPut put = new HttpPut(uri);
+        StringEntity entity = new StringEntity("some text in request body");
+        put.setEntity(entity);
+
+        CloseableHttpResponse response = client.execute(host, put);
+
+        assertStatusCode(HttpStatus.SC_OK, response);
+        assertEquals(PostAndPutHandler.TEST_RESPONSE +
+                        "<br>Arguments: {test1=noMore, test2=null, test3=soBoring}" +
+                        "<br>Content type: text/plain; charset=ISO-8859-1" +
+                        "<br>Content length: 25" +
+                        "<br>Text content: some text in request body" +
+                        PostAndPutHandler.CLOSE_HTML,
                 EntityUtils.toString(response.getEntity()));
     }
 
@@ -180,57 +267,6 @@ public class ServerTest {
         assertStatusCode(HttpStatus.SC_INTERNAL_SERVER_ERROR, response);
         assertNotNull(EntityUtils.toString(response.getEntity()));
     }
-
-    /*@Test
-    public void testPost() throws Exception {
-        HttpRequest request = new HttpPost(SUCCESS_URL);
-
-        assertNotImplemented(request);
-    }
-
-    @Test
-    public void testPut() throws Exception {
-        HttpRequest request = new HttpPut(SUCCESS_URL);
-
-        assertNotImplemented(request);
-    }
-
-    @Test
-    public void testDelete() throws Exception {
-        HttpRequest request = new HttpDelete(SUCCESS_URL);
-
-        assertNotImplemented(request);
-    }
-
-    @Test
-    public void testHead() throws Exception {
-        HttpRequest request = new HttpHead(SUCCESS_URL);
-
-        CloseableHttpResponse response = client.execute(host, request);
-
-        assertStatusCode(HttpStatus.SC_NOT_IMPLEMENTED, response);
-    }
-
-    @Test
-    public void testOptions() throws Exception {
-        HttpRequest request = new HttpOptions(SUCCESS_URL);
-
-        assertNotImplemented(request);
-    }
-
-    @Test
-    public void testTrace() throws Exception {
-        HttpRequest request = new HttpTrace(SUCCESS_URL);
-
-        assertNotImplemented(request);
-    }
-
-    @Test
-    public void testPatch() throws Exception {
-        HttpRequest request = new HttpPatch(SUCCESS_URL);
-
-        assertNotImplemented(request);
-    }*/
 
     private void assertNotImplemented(HttpRequest request) throws Exception {
         CloseableHttpResponse response = client.execute(host, request);

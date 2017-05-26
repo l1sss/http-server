@@ -344,15 +344,13 @@ public class Server implements Closeable {
     }
 
     private boolean isMethodSupported(HttpMethod method) {
-        return (method == HttpMethod.GET || method == HttpMethod.POST || method == HttpMethod.PUT);
-
-        /*for (HttpMethod m : HttpMethod.values()) {
+        for (HttpMethod m : HttpMethod.values()) {
             if (m == method)
 
                 return true;
         }
 
-        return false;*/
+        return false;
     }
 
     private class ConnectionHandler implements Runnable {

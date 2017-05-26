@@ -14,7 +14,7 @@ public class SuccessHandler implements Handler {
     @Override
     public void handle(Request request, Response response) throws Exception {
         response.getOutputStream().write((OK_HEADER + TEST_RESPONSE +
-                "<br>" + request.getBody().getTxtContent() + CLOSE_HTML).getBytes());
+                "<br>" + request.getArguments() + CLOSE_HTML).getBytes());
         response.getOutputStream().flush();
     }
 }
