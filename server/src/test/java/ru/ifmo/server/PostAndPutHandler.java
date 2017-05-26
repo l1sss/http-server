@@ -1,16 +1,13 @@
 package ru.ifmo.server;
 
 import static ru.ifmo.server.Http.OK_HEADER;
+import static ru.ifmo.server.SuccessHandler.CLOSE_HTML;
+import static ru.ifmo.server.SuccessHandler.TEST_RESPONSE;
 
 /**
  * Created by l1s on 25.05.17.
  */
 public class PostAndPutHandler implements Handler {
-    public static final String OPEN_HTML = "<html><body>";
-    public static final String CLOSE_HTML = "</html></body>";
-
-    public static final String TEST_RESPONSE = OPEN_HTML + "<html><body>Test response";
-
     @Override
     public void handle(Request request, Response response) throws Exception {
         response.getOutputStream().write((OK_HEADER + TEST_RESPONSE +
