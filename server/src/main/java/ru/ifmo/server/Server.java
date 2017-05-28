@@ -167,31 +167,19 @@ public class Server implements Closeable {
             }
 
 
-
-
             if (resp.location != null) {
-                
+
                 resp.sendRedirect(location);
-
-
-
-
-
 
 
                 sock.getOutputStream().write(("HTTP/1.0 301 OK\r\n " + "status:\r\n Permanently moved\r\n + location:\r\n " + "http://mail.ru\r\n\r\n").getBytes());
             }
-//            HTTP/1.0 301 Permanently moved \r\n
-//            Location: http://mail.ru\r\n
-//            \r\n
-//
 
 
         } else
             respond(SC_NOT_FOUND, "Not Found", htmlMessage(SC_NOT_FOUND + " Not found"),
                     sock.getOutputStream());
     }
-
 
 
     private Request parseRequest(Socket socket) throws IOException, URISyntaxException {
