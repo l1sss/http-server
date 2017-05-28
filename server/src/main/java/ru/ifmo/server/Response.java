@@ -9,6 +9,7 @@ import java.net.Socket;
  */
 public class Response {
     final Socket socket;
+    public Object location;
 
     Response(Socket socket) {
         this.socket = socket;
@@ -24,5 +25,17 @@ public class Response {
         catch (IOException e) {
             throw new ServerException("Cannot get output stream", e);
         }
+    }
+
+    public void setCharSet() {
+
+    }
+
+    public void sendRedirect(String location) {
+
+    }
+
+    public void forward(String resource){
+
     }
 }

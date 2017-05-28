@@ -1,5 +1,6 @@
 package ru.ifmo.server;
 
+import com.sun.xml.internal.ws.client.sei.ResponseBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.ifmo.server.util.Utils;
@@ -21,11 +22,11 @@ import static ru.ifmo.server.Http.*;
 /**
  * Ifmo Web Server.
  * <p>
- *     To start server use {@link #start(ServerConfig)} and register at least
- *     one handler to process HTTP requests.
- *     Usage example:
- *     <pre>
- *{@code
+ * To start server use {@link #start(ServerConfig)} and register at least
+ * one handler to process HTTP requests.
+ * Usage example:
+ * <pre>
+ * {@code
  * ServerConfig config = new ServerConfig()
  *      .addHandler("/index", new Handler() {
  *          public void handle(Request request, Response response) throws Exception {
@@ -40,8 +41,9 @@ import static ru.ifmo.server.Http.*;
  *     </pre>
  * </p>
  * <p>
- *     To stop the server use {@link #stop()} or {@link #close()} methods.
+ * To stop the server use {@link #stop()} or {@link #close()} methods.
  * </p>
+ *
  * @see ServerConfig
  */
 public class Server implements Closeable {
@@ -61,6 +63,7 @@ public class Server implements Closeable {
     private ExecutorService acceptorPool;
 
     private static final Logger LOG = LoggerFactory.getLogger(Server.class);
+    private String location;
 
     private Server(ServerConfig config) {
         this.config = new ServerConfig(config);
@@ -89,8 +92,7 @@ public class Server implements Closeable {
 
             LOG.info("Server started on port: {}", config.getPort());
             return server;
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             throw new ServerException("Cannot start server on port: " + config.getPort());
         }
     }
@@ -126,8 +128,7 @@ public class Server implements Closeable {
 
             if (LOG.isDebugEnabled())
                 LOG.debug("Parsed request: {}", req);
-        }
-        catch (URISyntaxException e) {
+        } catch (URISyntaxException e) {
             if (LOG.isDebugEnabled())
                 LOG.error("Malformed URL", e);
 
@@ -135,8 +136,7 @@ public class Server implements Closeable {
                     sock.getOutputStream());
 
             return;
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             LOG.error("Error parsing request", e);
 
             respond(SC_SERVER_ERROR, "Server Error", htmlMessage(SC_SERVER_ERROR + " Server error"),
@@ -158,19 +158,41 @@ public class Server implements Closeable {
         if (handler != null) {
             try {
                 handler.handle(req, resp);
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 if (LOG.isDebugEnabled())
                     LOG.error("Server error:", e);
 
                 respond(SC_SERVER_ERROR, "Server Error", htmlMessage(SC_SERVER_ERROR + " Server error"),
                         sock.getOutputStream());
             }
-        }
-        else
+
+
+
+
+            if (resp.location != null) {
+                
+                resp.sendRedirect(location);
+
+
+
+
+
+
+
+                sock.getOutputStream().write(("HTTP/1.0 301 OK\r\n " + "status:\r\n Permanently moved\r\n + location:\r\n " + "http://mail.ru\r\n\r\n").getBytes());
+            }
+//            HTTP/1.0 301 Permanently moved \r\n
+//            Location: http://mail.ru\r\n
+//            \r\n
+//
+
+
+        } else
             respond(SC_NOT_FOUND, "Not Found", htmlMessage(SC_NOT_FOUND + " Not found"),
                     sock.getOutputStream());
     }
+
+
 
     private Request parseRequest(Socket socket) throws IOException, URISyntaxException {
         InputStreamReader reader = new InputStreamReader(socket.getInputStream());
@@ -225,8 +247,7 @@ public class Server implements Closeable {
                     key = query.substring(start, i);
 
                     start = i + 1;
-                }
-                else if (key != null && (query.charAt(i) == AMP || last)) {
+                } else if (key != null && (query.charAt(i) == AMP || last)) {
                     req.addArgument(key, query.substring(start, last ? i + 1 : i));
 
                     key = null;
@@ -305,8 +326,7 @@ public class Server implements Closeable {
                     sock.setSoTimeout(config.getSocketTimeout());
 
                     processConnection(sock);
-                }
-                catch (Exception e) {
+                } catch (Exception e) {
                     if (!Thread.currentThread().isInterrupted())
                         LOG.error("Error accepting connection", e);
                 }
