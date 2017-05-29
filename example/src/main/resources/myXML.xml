@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<http-server>
+    <port>8080</port>
+    <host>localhost</host>
+    <handler1>/info.html=ru.ifmo.example.server.SimpleExample$InfoHandler@433c675d</handler1>
+    <handlers>
+        <handler user="01">
+            class="ru.ifmo.example.server.SimpleExample"
+        </handler>
+    </handlers>
+    <fgh>
+
+    </fgh>
+    <socketTime>0</socketTime>
+</http-server>
