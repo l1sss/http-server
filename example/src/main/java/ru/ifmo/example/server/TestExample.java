@@ -4,18 +4,23 @@ import ru.ifmo.server.*;
 
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.util.Arrays;
 
 /**
- * Simple hello world example.
+ * Created by l1s on 25.05.17.
  */
-public class HelloWorldExample {
+public class TestExample {
     public static void main(String[] args) {
         ServerConfig config = new ServerConfig()
-                .addHandler("/index", new Handler() {
+                .addHandler("/test", new Handler() {
                     @Override
                     public void handle(Request request, Response response) throws Exception {
                         Writer writer = new OutputStreamWriter(response.getOutputStream());
-                        writer.write(Http.OK_HEADER + "Hello World!");
+                        writer.write(Http.OK_HEADER + "Hello Test!" +
+                                "\nArguments: " + request.getArguments() +
+                                "\nContent type: " + request.getBody().getContentType() +
+                                "\nContent length: " + request.getBody().getContentLength() +
+                                "\nText content: " + request.getBody().getTxtContent());
                         writer.flush();
                     }
                 });
