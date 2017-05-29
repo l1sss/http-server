@@ -1,8 +1,6 @@
 package ru.ifmo.server;
 
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
@@ -12,34 +10,25 @@ import java.util.Map;
  */
 public class Response {
     final Socket socket;
-    private int code;
-    private byte[] body;
-    private Map<String, String> headers = new HashMap<>();
-    private DataOutputStream writer;
-    private long length = -1;
-    private String contentType;
+    int statusCode;
+    Map<String, String> headers = new HashMap<>();
+    PrintWriter printWriter;
+    long length = -1;
+    String contentType;
+    ByteArrayOutputStream bufferOutputStream;
 
 
     //GETTER and SETTER//
 
+    public void setStatusCode (int code) {
+        if ( (code<100)||(code>505)  ){
+            throw new ServerException("Not valid http status code:" + code);
+        }
+        statusCode = code;
+    }
+
     public int getStatusCode() {
-        return code;
-    }
-
-    public void setStatusCode(int code) {
-        this.code = code;
-    }
-
-    public byte[] getBody() {
-        return body;
-    }
-
-    public void setBody(String body) throws IOException {
-        this.body = body.getBytes();
-    }
-
-    public void setBody(byte[] bytes) {
-        body = bytes;
+        return statusCode;
     }
 
     public Map<String, String> getHeaders() {
@@ -58,11 +47,7 @@ public class Response {
         this.headers.put(key, value);
     }
 
-    private DataOutputStream getWriter() {
-        return writer;
-    }
-
-    public String setContentType(String contentType){
+    public String setContentType(String contentType) {
         return this.contentType = contentType;
     }
 
@@ -72,7 +57,6 @@ public class Response {
         }
     }
 
-
     Response(Socket socket) {
         this.socket = socket;
     }
@@ -80,12 +64,25 @@ public class Response {
     /**
      * @return {@link OutputStream} connected to the client.
      */
-    public OutputStream getOutputStream() {
+    public ByteArrayOutputStream getOutputStreamBuffer() {
+        if (bufferOutputStream == null)
+            bufferOutputStream = new ByteArrayOutputStream();
+
+        return bufferOutputStream;
+    }
+
+
+    public void setBody(byte[] data) {
         try {
-            return socket.getOutputStream();
-        }
-        catch (IOException e) {
+            getOutputStreamBuffer().write(data);
+        } catch (IOException e) {
             throw new ServerException("Cannot get output stream", e);
         }
+    }
+
+    public PrintWriter getWriter() {
+        if (printWriter==null)
+            printWriter = new PrintWriter(getOutputStreamBuffer());
+        return printWriter;
     }
 }
