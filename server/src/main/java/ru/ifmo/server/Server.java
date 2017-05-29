@@ -9,6 +9,9 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -184,7 +187,7 @@ public class Server implements Closeable {
             sb.setLength(0);
         }
 
-        if ((req.getMethod() == HttpMethod.POST || req.getMethod() == HttpMethod.PUT) && req.getBody().reasonToParse()) {
+        if ((req.getMethod() == HttpMethod.POST || req.getMethod() == HttpMethod.PUT) && req.getBody().contentPresent()) {
             if (req.getBody().getContentType().contains("text"))
                 parseTxtBody(in, sb, req);
             else
@@ -270,13 +273,14 @@ public class Server implements Closeable {
 
         int contentLength = request.getBody().getContentLength();
 
+        char[] buf = new char[1024];
         int len;
         int count = 0;
 
-        while ((len = reader.read()) > 0) {
-            sb.append((char) len);
+        while ((len = reader.read(buf)) > 0) {
+            sb.append(new String(buf, 0, len));
 
-            count++;
+            count += len;
             if (count == contentLength)
                 break;
         }
@@ -299,9 +303,6 @@ public class Server implements Closeable {
             count += len;
             if (count == contentLength)
                 break;
-
-            /*if (LOG.isTraceEnabled())
-                LOG.trace("Count = {}, content length = {}", count, contentLength);*/
         }
 
         request.getBody().binContent = bout.toByteArray();
@@ -311,7 +312,7 @@ public class Server implements Closeable {
         int c;
         int count = 0;
 
-        while ((c = in.read()) > 0) {
+        while ((c = in.read()) >= 0) {
             if (c == LF) {
                 break;
             }
@@ -344,6 +345,7 @@ public class Server implements Closeable {
     }
 
     private boolean isMethodSupported(HttpMethod method) {
+
         for (HttpMethod m : HttpMethod.values()) {
             if (m == method)
 

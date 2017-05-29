@@ -71,7 +71,7 @@ public class Request {
      */
     public Body getBody() {
         if (body == null)
-            return new Body();
+            body = new Body();
 
         return body;
     }
@@ -83,13 +83,13 @@ public class Request {
         if (headers == null)
             headers = new LinkedHashMap<>();
 
-        if (key.equals(CONTENT_TYPE)) {
+        if (CONTENT_TYPE.equals(key)) {
             if (body == null)
                 body = new Body();
             body.contentType = value;
         }
 
-        else if (key.equals(CONTENT_LENGTH)) {
+        else if (CONTENT_LENGTH.equals(key)) {
             if (body == null)
                 body = new Body();
             body.contentLength = Integer.parseInt(value);

@@ -37,7 +37,7 @@ public class Body {
      */
     private String parseFormat() {
         if (contentType == null)
-            return "content type not found";
+            return "bin";
 
         String format = null;
 
@@ -51,7 +51,7 @@ public class Body {
         return format;
     }
 
-    public boolean reasonToParse() {
+    boolean contentPresent() {
         return contentType != null && contentLength != 0;
     }
 }
