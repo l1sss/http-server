@@ -1,5 +1,6 @@
 package ru.ifmo.server;
 
+import javax.xml.soap.MimeHeaders;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Socket;
@@ -11,6 +12,8 @@ public class Response {
     final Socket socket;
     public Object location;
 
+
+
     Response(Socket socket) {
         this.socket = socket;
     }
@@ -21,8 +24,7 @@ public class Response {
     public OutputStream getOutputStream() {
         try {
             return socket.getOutputStream();
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             throw new ServerException("Cannot get output stream", e);
         }
     }
@@ -31,11 +33,15 @@ public class Response {
 
     }
 
-    public void sendRedirect(String location) {
+    public void sendRedirect(String location) throws IOException {
+        this.location = location;
+
+
 
     }
 
-    public void forward(String resource){
+
+    public void forward(String resource) {
 
     }
 }

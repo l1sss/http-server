@@ -1,6 +1,5 @@
 package ru.ifmo.server;
 
-import com.sun.xml.internal.ws.client.sei.ResponseBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.ifmo.server.util.Utils;
@@ -169,10 +168,10 @@ public class Server implements Closeable {
 
             if (resp.location != null) {
 
-                resp.sendRedirect("mail.ru");
+                resp.sendRedirect("http://mail.ru");
 
 
-                sock.getOutputStream().write(("HTTP/1.0 301 OK\r\n " + "status:\r\n Permanently moved\r\n + location:\r\n " + "http://mail.ru\r\n\r\n").getBytes());
+                sock.getOutputStream().write(("HTTP/1.0 301 OK\r\n " + "status: Permanently moved" + " location: " + "http://mail.ru\r\n\r\n").getBytes());
             }
 
 
