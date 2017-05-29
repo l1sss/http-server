@@ -169,7 +169,7 @@ public class Server implements Closeable {
 
             if (resp.location != null) {
 
-                resp.sendRedirect(location);
+                resp.sendRedirect("mail.ru");
 
 
                 sock.getOutputStream().write(("HTTP/1.0 301 OK\r\n " + "status:\r\n Permanently moved\r\n + location:\r\n " + "http://mail.ru\r\n\r\n").getBytes());
