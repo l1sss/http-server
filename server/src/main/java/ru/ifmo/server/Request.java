@@ -10,7 +10,6 @@ import java.util.Map;
 
 import static ru.ifmo.server.Http.CONTENT_LENGTH;
 import static ru.ifmo.server.Http.CONTENT_TYPE;
-import static ru.ifmo.server.Http.CONTENT_TYPE_SEPARATOR;
 
 /**
  * Keeps request information: method, headers, params
