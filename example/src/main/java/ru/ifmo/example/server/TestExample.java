@@ -20,7 +20,8 @@ public class TestExample {
                                 "\nArguments: " + request.getArguments() +
                                 "\nContent type: " + request.getBody().getContentType() +
                                 "\nContent length: " + request.getBody().getContentLength() +
-                                "\nText content: " + request.getBody().getTxtContent());
+                                "\nText content: " + request.getBody().getTxtContent() +
+                                "\nBin content: " + Arrays.toString(request.getBody().getBinContent()));
                         writer.flush();
                     }
                 });

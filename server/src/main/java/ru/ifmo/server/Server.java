@@ -9,6 +9,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -51,16 +53,30 @@ public class Server implements Closeable {
     private static final char SPACE = ' ';
     private static final int READER_BUF_SIZE = 1024;
 
+    private static final Logger LOG = LoggerFactory.getLogger(Server.class);
+
     private final ServerConfig config;
+
+    private static Map<String, Session> sessions = new HashMap<>();
 
     private ServerSocket socket;
 
     private ExecutorService acceptorPool;
 
-    private static final Logger LOG = LoggerFactory.getLogger(Server.class);
-
     private Server(ServerConfig config) {
         this.config = new ServerConfig(config);
+    }
+
+    public Map<String, Session> getSessions() {
+        return sessions;
+    }
+
+    public void setSessions(String key, Session session) {
+        sessions.put(key, session);
+    }
+
+    public static void removeSession(String id) {
+        sessions.remove(id);
     }
 
     /**
@@ -342,7 +358,6 @@ public class Server implements Closeable {
     }
 
     private boolean isMethodSupported(HttpMethod method) {
-
         for (HttpMethod m : HttpMethod.values()) {
             if (m == method)
 
