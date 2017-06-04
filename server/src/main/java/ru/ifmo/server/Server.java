@@ -12,8 +12,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 import static ru.ifmo.server.util.Utils.htmlMessage;
 import static ru.ifmo.server.Http.*;
@@ -58,6 +57,8 @@ public class Server implements Closeable {
 
     private ServerSocket socket;
 
+    private ExecutorService poolSock;
+
     private ExecutorService acceptorPool;
 
     private static final Logger LOG = LoggerFactory.getLogger(Server.class);
@@ -70,10 +71,11 @@ public class Server implements Closeable {
      * Starts server according to config. If null passed
      * defaults will be used.
      *
-     * @param config Server config or null.
+     * @param config Ser er config or null.
      * @return Server instance.
      * @see ServerConfig
      */
+
     public static Server start(ServerConfig config) {
         if (config == null)
             config = new ServerConfig();
@@ -103,6 +105,8 @@ public class Server implements Closeable {
         acceptorPool = Executors.newSingleThreadExecutor(new ServerThreadFactory("con-acceptor"));
 
         acceptorPool.submit(new ConnectionHandler());
+        poolSock = Executors.newCachedThreadPool();
+
     }
 
     /**
@@ -110,14 +114,17 @@ public class Server implements Closeable {
      */
     public void stop() {
         acceptorPool.shutdownNow();
+        poolSock.shutdownNow();
         Utils.closeQuiet(socket);
 
         socket = null;
     }
 
-    private void processConnection(Socket sock) throws IOException {
+
+    private void  processConnection(Socket sock) throws IOException {
         if (LOG.isDebugEnabled())
             LOG.debug("Accepting connection on: {}", sock);
+
 
         Request req;
 
@@ -239,7 +246,7 @@ public class Server implements Closeable {
         }
     }
 
-    private void parseHeader(Request req, StringBuilder sb) {
+    private void parseHeader (Request req, StringBuilder sb) {
         String key = null;
 
         int len = sb.length();
@@ -298,13 +305,37 @@ public class Server implements Closeable {
         return method == HttpMethod.GET;
     }
 
+
+
     private class ConnectionHandler implements Runnable {
+
+
+
         public void run() {
+
+
             while (!Thread.currentThread().isInterrupted()) {
                 try (Socket sock = socket.accept()) {
                     sock.setSoTimeout(config.getSocketTimeout());
 
-                    processConnection(sock);
+                    // incapsulate multithread sock execution
+
+
+                 //processConnection(sock);
+
+                    poolSock.execute(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+
+                                processConnection(sock);
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                                poolSock.shutdownNow();
+                            }
+                        }
+                    }) ;
+
                 }
                 catch (Exception e) {
                     if (!Thread.currentThread().isInterrupted())
