@@ -32,7 +32,6 @@ public class SimpleExample {
         }
         else
             System.out.println(">>> Open " + infoPage);
-
     }
 
     private static class InfoHandler implements Handler {

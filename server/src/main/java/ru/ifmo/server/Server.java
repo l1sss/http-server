@@ -4,7 +4,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.ifmo.server.util.Utils;
 
-import java.io.*;
+import java.io.Closeable;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URI;
@@ -12,17 +15,17 @@ import java.net.URISyntaxException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static ru.ifmo.server.util.Utils.htmlMessage;
 import static ru.ifmo.server.Http.*;
+import static ru.ifmo.server.util.Utils.htmlMessage;
 
 /**
  * Ifmo Web Server.
  * <p>
- *     To start server use {@link #start(ServerConfig)} and register at least
- *     one handler to process HTTP requests.
- *     Usage example:
- *     <pre>
- *{@code
+ * To start server use {@link #start(ServerConfig)} and register at least
+ * one handler to process HTTP requests.
+ * Usage example:
+ * <pre>
+ * {@code
  * ServerConfig config = new ServerConfig()
  *      .addHandler("/index", new Handler() {
  *          public void handle(Request request, Response response) throws Exception {
@@ -37,8 +40,9 @@ import static ru.ifmo.server.Http.*;
  *     </pre>
  * </p>
  * <p>
- *     To stop the server use {@link #stop()} or {@link #close()} methods.
+ * To stop the server use {@link #stop()} or {@link #close()} methods.
  * </p>
+ *
  * @see ServerConfig
  */
 public class Server implements Closeable {
@@ -60,6 +64,17 @@ public class Server implements Closeable {
     private static final Logger LOG = LoggerFactory.getLogger(Server.class);
 
     private Server(ServerConfig config) {
+        if (config.filters == null || config.filters.length == 0)
+            config.firstFilter = new TailFilter();
+        else {
+            config.firstFilter = config.filters[0];
+
+            for (int i = 1; i < config.filters.length; i++)
+                config.filters[i - 1].setNextFilter(config.filters[i]);
+
+            config.filters[config.filters.length - 1].setNextFilter(new TailFilter());
+        }
+
         this.config = new ServerConfig(config);
     }
 
@@ -79,6 +94,7 @@ public class Server implements Closeable {
             if (LOG.isDebugEnabled())
                 LOG.debug("Starting server with config: {}", config);
 
+
             Server server = new Server(config);
 
             server.openConnection();
@@ -86,8 +102,7 @@ public class Server implements Closeable {
 
             LOG.info("Server started on port: {}", config.getPort());
             return server;
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             throw new ServerException("Cannot start server on port: " + config.getPort());
         }
     }
@@ -123,8 +138,7 @@ public class Server implements Closeable {
 
             if (LOG.isDebugEnabled())
                 LOG.debug("Parsed request: {}", req);
-        }
-        catch (URISyntaxException e) {
+        } catch (URISyntaxException e) {
             if (LOG.isDebugEnabled())
                 LOG.error("Malformed URL", e);
 
@@ -132,8 +146,7 @@ public class Server implements Closeable {
                     sock.getOutputStream());
 
             return;
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             LOG.error("Error parsing request", e);
 
             respond(SC_SERVER_ERROR, "Server Error", htmlMessage(SC_SERVER_ERROR + " Server error"),
@@ -149,25 +162,10 @@ public class Server implements Closeable {
             return;
         }
 
-        Handler handler = config.handler(req.getPath());
-        Response resp = new Response(sock);
+        config.firstFilter.doFilter(req, new Response(req.socket));
 
-        if (handler != null) {
-            try {
-                handler.handle(req, resp);
-            }
-            catch (Exception e) {
-                if (LOG.isDebugEnabled())
-                    LOG.error("Server error:", e);
-
-                respond(SC_SERVER_ERROR, "Server Error", htmlMessage(SC_SERVER_ERROR + " Server error"),
-                        sock.getOutputStream());
-            }
-        }
-        else
-            respond(SC_NOT_FOUND, "Not Found", htmlMessage(SC_NOT_FOUND + " Not found"),
-                    sock.getOutputStream());
     }
+
 
     private Request parseRequest(Socket socket) throws IOException, URISyntaxException {
         InputStreamReader reader = new InputStreamReader(socket.getInputStream());
@@ -222,8 +220,7 @@ public class Server implements Closeable {
                     key = query.substring(start, i);
 
                     start = i + 1;
-                }
-                else if (key != null && (query.charAt(i) == AMP || last)) {
+                } else if (key != null && (query.charAt(i) == AMP || last)) {
                     req.addArgument(key, query.substring(start, last ? i + 1 : i));
 
                     key = null;
@@ -295,15 +292,56 @@ public class Server implements Closeable {
         return method == HttpMethod.GET;
     }
 
+    public class HeaderFilter extends Filter{
+
+        String value = null;
+        int x=1;
+        public HeaderFilter(String string, int x){
+            this.value = string;
+            this.x = x;
+        }
+        @Override
+        public void doFilter(Request request, Response response) throws IOException {
+            request.addHeader("HeaderFromFilter"+x,value);
+        }
+    }
+
+        public class TailFilter extends Filter  {
+
+        @Override
+        public void doFilter(Request req, Response response)throws IOException {
+
+            Socket sock = req.socket;
+
+            Handler handler = config.handler(req.getPath());
+            Response resp = new Response(req.socket);
+
+            if (handler != null) {
+                try {
+                    handler.handle(req, resp);
+                } catch (Exception e) {
+                    if (LOG.isDebugEnabled())
+                        LOG.error("Server error:", e);
+
+                    respond(SC_SERVER_ERROR, "Server Error", htmlMessage(SC_SERVER_ERROR + " Server error"),
+                            sock.getOutputStream());
+                }
+            } else
+                respond(SC_NOT_FOUND, "Not Found", htmlMessage(SC_NOT_FOUND + " Not found"),
+                        sock.getOutputStream());
+        }
+    }
+
+
     private class ConnectionHandler implements Runnable {
         public void run() {
             while (!Thread.currentThread().isInterrupted()) {
                 try (Socket sock = socket.accept()) {
+                    System.out.println("Server have connection with client " + sock.getRemoteSocketAddress());
                     sock.setSoTimeout(config.getSocketTimeout());
 
                     processConnection(sock);
-                }
-                catch (Exception e) {
+                } catch (Exception e) {
                     if (!Thread.currentThread().isInterrupted())
                         LOG.error("Error accepting connection", e);
                 }

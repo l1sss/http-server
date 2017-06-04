@@ -4,7 +4,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpStatus;
-import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.*;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -16,8 +15,9 @@ import org.junit.Test;
 
 import java.net.URI;
 
-import static org.junit.Assert.*;
-import static ru.ifmo.server.TestUtils.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static ru.ifmo.server.TestUtils.assertStatusCode;
 
 /**
  * Tests main server functionality.
@@ -28,6 +28,8 @@ public class ServerTest {
     private static final String SUCCESS_URL = "/test_success";
     private static final String NOT_FOUND_URL = "/test_not_found";
     private static final String SERVER_ERROR_URL = "/test_fail";
+    private static final String FILTER_URL = "/test_filter";
+    private static int cnt = 0;
 
     private static Server server;
     private static CloseableHttpClient client;
@@ -36,7 +38,14 @@ public class ServerTest {
     public static void initialize() {
         ServerConfig cfg = new ServerConfig()
                 .addHandler(SUCCESS_URL, new SuccessHandler())
-                .addHandler(SERVER_ERROR_URL, new FailHandler());
+                .addHandler(SERVER_ERROR_URL, new FailHandler())
+                .addHandler(FILTER_URL,new FilterHandler());
+
+        Filter filter1 = new TestUtils.HeaderFilter("filter1",++cnt);
+        Filter filter2 = new TestUtils.HeaderFilter("filter2",++cnt);
+        Filter filter3 = new TestUtils.HeaderFilter("filter3",++cnt);
+
+        cfg.setFilters(filter1,filter2,filter3);
 
         server = Server.start(cfg);
         client = HttpClients.createDefault();
@@ -73,6 +82,24 @@ public class ServerTest {
                         SuccessHandler.CLOSE_HTML,
                 EntityUtils.toString(response.getEntity()));
     }
+
+    @Test
+    public void testFilter() throws Exception {
+
+        URI uri = new URIBuilder(FILTER_URL).build();
+        HttpRequest request = new HttpGet(uri);
+
+        CloseableHttpResponse response = client.execute(host, request);
+
+        assertStatusCode(HttpStatus.SC_OK, response);
+        assertEquals(SuccessHandler.TEST_RESPONSE +
+                        "<br>Headers: {Host=localhost:8080, Connection=Keep-Alive, "
+                        +"User-Agent=Apache-HttpClient/4.5.2 "
+                        + "(Java/1.8.0_121), Accept-Encoding=gzip,deflate, filter1=1, filter2=2, filter3=3}" +
+                        SuccessHandler.CLOSE_HTML,
+                EntityUtils.toString(response.getEntity()));
+    }
+
 
     @Test
     public void testNotFound() throws Exception {

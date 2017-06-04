@@ -9,9 +9,6 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import static ru.ifmo.server.Http.CONTENT_LENGTH;
-import static ru.ifmo.server.Http.CONTENT_TYPE;
-
 /**
  * Keeps request information: method, headers, params
  * and provides {@link java.io.InputStream} to get additional data
@@ -21,14 +18,12 @@ public class Request {
     final Socket socket;
     HttpMethod method;
     URI path;
-    Body body;
 
     Map<String, String> headers;
     Map<String, String> args;
 
     Request(Socket socket) {
         this.socket = socket;
-        this.body = new Body();
     }
 
     /**
@@ -67,22 +62,10 @@ public class Request {
         return Collections.unmodifiableMap(headers);
     }
 
-    /**
-     * @return Request body.
-     */
-    public Body getBody() {
-        return body;
-    }
-
-    void addHeader(String key, String value) {
+    public void addHeader(String key, String value) {
         if (headers == null)
             headers = new LinkedHashMap<>();
 
-        if (key.equals(CONTENT_TYPE))
-            body.contentType = value;
-
-        else if (key.equals(CONTENT_LENGTH))
-            body.contentLength = Integer.parseInt(value);
 
         headers.put(key, value);
     }
@@ -116,5 +99,9 @@ public class Request {
     }
 
     public void setCharSet() {
+    }
+
+    public void setPath(URI path){
+        this.path = path;
     }
 }

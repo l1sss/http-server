@@ -1,8 +1,7 @@
 package ru.ifmo.server;
 
-import ru.ifmo.server.Filters.Filter;
-
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Holds server configs: local port, handler mappings, etc.
@@ -16,8 +15,9 @@ public class ServerConfig {
     private int port = DFLT_PORT;
     private Map<String, Handler> handlers;
     private int socketTimeout;
-    private List<Filter> filterList;
-    private static final  String DEF_CHAR_SET = "UTF8";
+    Filter[] filters;
+    Filter firstFilter;
+
 
     public ServerConfig() {
         handlers = new HashMap<>();
@@ -29,7 +29,9 @@ public class ServerConfig {
         port = config.port;
         handlers = new HashMap<>(config.handlers);
         socketTimeout = config.socketTimeout;
+        firstFilter = config.firstFilter;
     }
+
 
     /**
      * @return Local port.
@@ -115,17 +117,10 @@ public class ServerConfig {
     }
 
 
-    public void setFilters(Filter... filters) {
+    public ServerConfig setFilters(Filter... filters) {
+        this.filters = filters;
 
-        filterList = new ArrayList<>(filters.length);
-        filterList.addAll(Arrays.asList(filters));
-
-        Filter[] arr = filters.clone();
-
-        for (int i = 0; i < filters.length - 1; i++) {
-            arr[i].setNextFilter(arr[i + 1]);
-        }
-
+        return this;
     }
 
 
