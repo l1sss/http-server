@@ -8,10 +8,12 @@ import java.util.Map;
  * Created by l1s on 30.05.17.
  */
 public class Session {
+    public static final String SESSION_COOKIE_NAME = "SESSIONID";
 
-    final String SESSIONIDSYMBOLS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    final int SESSIONIDLENGTH = 32;
-    final int SESSIONLIVETIME = 1800;
+    final String SESSION_ID_SYMBOLS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    final int SESSION_ID_LENGTH = 32;
+    final int SESSION_LIVETIME = 1800;
+
 
     String id;
     LocalDateTime expire;
@@ -20,7 +22,7 @@ public class Session {
 
     public Session() {
         this.id = generateSessionId();
-        this.setExpire(SESSIONLIVETIME);
+        this.setExpire(SESSION_LIVETIME);
     }
 
     public String getId() {
@@ -60,8 +62,8 @@ public class Session {
     public String generateSessionId() {
         StringBuilder sb = new StringBuilder();
 
-        for (int i = 0; i < SESSIONIDLENGTH; i++) {
-            sb.append(SESSIONIDSYMBOLS.charAt((int) (Math.random() * SESSIONIDSYMBOLS.length())));
+        for (int i = 0; i < SESSION_ID_LENGTH; i++) {
+            sb.append(SESSION_ID_SYMBOLS.charAt((int) (Math.random() * SESSION_ID_SYMBOLS.length())));
         }
 
         return sb.toString();

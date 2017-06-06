@@ -5,11 +5,13 @@ import java.io.InputStream;
 import java.net.Socket;
 import java.net.URI;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static ru.ifmo.server.Http.CONTENT_LENGTH;
 import static ru.ifmo.server.Http.CONTENT_TYPE;
+import static ru.ifmo.server.Session.SESSION_COOKIE_NAME;
 
 /**
  * Keeps request information: method, headers, params
@@ -24,6 +26,9 @@ public class Request {
 
     Map<String, String> headers;
     Map<String, String> args;
+    Map<String, String> cookies;
+
+    Session session;
 
     Request(Socket socket) {
         this.socket = socket;
@@ -35,8 +40,7 @@ public class Request {
     public InputStream getInputStream() {
         try {
             return socket.getInputStream();
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             throw new ServerException("Unable retrieve input stream.", e);
         }
     }
@@ -86,9 +90,7 @@ public class Request {
             if (body == null)
                 body = new Body();
             body.contentType = value;
-        }
-
-        else if (CONTENT_LENGTH.equals(key)) {
+        } else if (CONTENT_LENGTH.equals(key)) {
             if (body == null)
                 body = new Body();
             body.contentLength = Integer.parseInt(value);
@@ -112,6 +114,37 @@ public class Request {
             return Collections.emptyMap();
 
         return Collections.unmodifiableMap(args);
+    }
+
+    void insertCookie(String name, String value) {
+        if (cookies == null)
+            cookies = new HashMap<>();
+
+        cookies.put(name, value);
+    }
+
+    public Map<String, String> getCookies() {
+        if (cookies == null)
+            return Collections.emptyMap();
+
+        return Collections.unmodifiableMap(cookies);
+    }
+
+    public String getCookieValue(String key) {
+        return cookies.get(key);
+    }
+
+    private boolean containsSESSIONIDCookie() {
+        return getCookies().containsKey(SESSION_COOKIE_NAME);
+    }
+
+    public Session getSession() {
+        if (!containsSESSIONIDCookie()) {
+            session = new Session();
+            Server.setSessions(session.getId(), session);
+        }
+
+        return session;
     }
 
     @Override

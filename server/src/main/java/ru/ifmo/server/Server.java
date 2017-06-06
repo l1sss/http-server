@@ -71,7 +71,7 @@ public class Server implements Closeable {
         return sessions;
     }
 
-    public void setSessions(String key, Session session) {
+    public static void setSessions(String key, Session session) {
         sessions.put(key, session);
     }
 
