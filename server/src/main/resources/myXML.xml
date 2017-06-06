@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<http-server>
+    <port>7777</port>
+    <handlers>
+        <handler url="/info.html" class="ru.ifmo.server.FakeHandler"/>
+        <handler url="/info" class="ru.ifmo.server.FakeHandler"/>
+    </handlers>
+    <filters>
+       <!-- <filter class="ru.ifmo.Filter1"/>
+        <filter class="ru.ifmo.Filter1"/>
+        <filter class="ru.ifmo.Filter1"/>
+        <filter class="ru.ifmo.Filter1"/>-->
+    </filters>
+    <socketTimeout>9</socketTimeout>
+</http-server>
