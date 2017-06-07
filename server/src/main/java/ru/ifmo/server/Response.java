@@ -26,15 +26,5 @@ public class Response {
         }
     }
 
-    public void setCharSet() {
 
-    }
-
-    public void sendRedirect(String location) {
-
-    }
-
-    public void forward(String resource){
-
-    }
 }
