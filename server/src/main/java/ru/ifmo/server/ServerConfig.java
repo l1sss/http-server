@@ -112,7 +112,7 @@ public class ServerConfig {
     }
 
     public ServerConfig setWorkDirectory(File file){
-        if(!file.isDirectory())
+        if(file.isDirectory())
             workDirectory = file;
         return this;
     }
