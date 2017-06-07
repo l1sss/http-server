@@ -18,17 +18,15 @@ public abstract class AbstractParser implements Parser {
         config = new ServerConfig();
     }
 
-    protected void addHandler(String url, String className) throws Exception {
-
+    protected void addHandler(String url, String className) throws ReflectiveOperationException {
         config.addHandler(url, (Handler) Class.forName(className).newInstance());
     }
 
     protected void addFilter(String className) throws Exception {
-
         //config.addFilter(className);
     }
 
-    protected void reflectiveSet(String key, String value) throws Exception {
+    protected void reflectiveSet(String key, String value) throws ReflectiveOperationException {
         Method setter = findSetter(key);
 
         if (setter != null)
@@ -41,34 +39,34 @@ public abstract class AbstractParser implements Parser {
         method.invoke(config, getArgument(paramType, value));
     }
 
-    private Object getArgument(Class<?> paramType, String value) {
+    private Object getArgument(Class<?> paramType, String value) throws ClassNotFoundException {
         Object o;
-        if (paramType == int.class || paramType == Integer.class) {
-            o = Integer.valueOf(value);
-            return o;
-        }
-        else if (paramType == byte.class || paramType == Byte.class) {
-            o = Byte.valueOf(value);
-            return o;
-        }
-        else if (paramType == short.class || paramType == Short.class) {
-            o = Short.valueOf(value);
-            return o;
-        }
-        else if (paramType == long.class || paramType == Long.class) {
-            o = Long.valueOf(value);
-            return o;
-        }
-        else if (paramType == double.class || paramType == Double.class) {
-            o = Double.valueOf(value);
-            return o;
-        }
-        else if (paramType == float.class || paramType == Float.class) {
-            o = Float.valueOf(value);
-            return o;
-        }
-        else if (paramType == String.class) // надо ли еще приводить типы?
+        if (paramType == int.class || paramType == Integer.class)
+            return Integer.valueOf(value);
+
+        else if (paramType == byte.class || paramType == Byte.class)
+            return Byte.valueOf(value);
+
+        else if (paramType == short.class || paramType == Short.class)
+            return Short.valueOf(value);
+
+        else if (paramType == long.class || paramType == Long.class)
+            return Long.valueOf(value);
+
+        else if (paramType == double.class || paramType == Double.class)
+            return Double.valueOf(value);
+
+        else if (paramType == float.class || paramType == Float.class)
+            return Float.valueOf(value);
+
+        else if (paramType == char.class)
+            return value.charAt(0);
+
+        else if (paramType == String.class)
             return value;
+
+        else if (paramType == Class.class)
+            return Class.forName(value);
 
         throw new ServerException("Unsupported type " + paramType);
     }
@@ -80,7 +78,7 @@ public abstract class AbstractParser implements Parser {
 
         String methodName = "set" + new String(arr);
 
-        for (Method method : methods){
+        for (Method method : ServerConfig.class.getDeclaredMethods()){
             if (methodName.equals(method.getName()) && method.getParameterCount() == 1) {
                 return method;
             }

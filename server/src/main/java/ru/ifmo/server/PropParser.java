@@ -14,19 +14,18 @@ public class PropParser extends AbstractParser {
         super(in);
     }
 
-    public ServerConfig parse()throws Exception{
+    public ServerConfig parse() throws Exception {
         Properties prop = new Properties();
 
         try{
-            prop.load(in); // так обернуть, и сразу закрыть?
+            prop.load(in);
         }
         finally {
             in.close();
         }
 
         for (String key : prop.stringPropertyNames()) {
-            if (key.equals("handlers")) {
-
+            if ("handlers".equals(key)) {
                 String[] handlers = prop.getProperty(key).split(",");
 
                 for (String handler : handlers){
@@ -38,6 +37,7 @@ public class PropParser extends AbstractParser {
             else
                 reflectiveSet(key, prop.getProperty(key));
         }
+
         return config;
     }
 }

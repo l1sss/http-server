@@ -1,11 +1,9 @@
 package ru.ifmo.server;
 
 import javax.xml.namespace.QName;
-import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLStreamConstants;
-import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.*;
 import javax.xml.stream.events.*;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
@@ -18,50 +16,56 @@ public class XMLParser extends AbstractParser {
         super(in);
     }
 
-    public ServerConfig parse()throws Exception{
+    public ServerConfig parse() throws IOException, XMLStreamException, ReflectiveOperationException {
         XMLInputFactory factory = XMLInputFactory.newFactory();
-
-        XMLEventReader reader = factory.createXMLEventReader(in); // надо ли оборачивать в try/finaly?
 
         StringBuilder valueText = new StringBuilder();
 
-        while (reader.hasNext()){
-            XMLEvent event = reader.nextEvent();
+        XMLEventReader reader = null;
 
-            if (event.getEventType() == XMLStreamReader.START_ELEMENT){
-                StartElement startElement = event.asStartElement();
+        try{
+            reader = factory.createXMLEventReader(in);
 
-                Attribute attUrl = startElement.getAttributeByName(new QName("url"));
-                Attribute attClass = startElement.getAttributeByName(new QName("class"));
+            while (reader.hasNext()){
+                XMLEvent event = reader.nextEvent();
 
-                if (attUrl != null && attClass != null)
-                    addHandler(attUrl.getValue(), attClass.getValue());
+                if (event.getEventType() == XMLStreamReader.START_ELEMENT){
+                    StartElement startElement = event.asStartElement();
 
-                else if (attClass != null){
-                    //addFilter(attClass.getValue()); жду фильтра
+                    Attribute attUrl = startElement.getAttributeByName(new QName("url"));
+                    Attribute attClass = startElement.getAttributeByName(new QName("class"));
+
+                    String tagStart = startElement.getName().getLocalPart();
+
+                    if ("handler".equals(tagStart) && attUrl != null && attClass != null)
+                        addHandler(attUrl.getValue(), attClass.getValue());
+
+                    else if ("filter".equals(tagStart) && attClass != null){
+                        //addFilter(attClass.getValue()); жду фильтра
+                    }                                           // надо выбрасывать искл если нет ни хендлеров ни фильтров?
+                                                                // или их просто не будет в загрузке?
+                }
+                else if (event.getEventType() == XMLStreamConstants.CHARACTERS){
+                    Characters characters = event.asCharacters();
+
+                    valueText.append(characters.getData());
+                }
+                else  if (event.getEventType() == XMLStreamConstants.END_ELEMENT){
+                    EndElement endElement = event.asEndElement();
+
+                    String tagEnd = endElement.getName().getLocalPart();
+
+                    if (!valueText.toString().trim().isEmpty())
+                        reflectiveSet(tagEnd, valueText.toString().trim());
+
+                    valueText.setLength(0);
                 }
             }
-
-            else if (event.getEventType() == XMLStreamConstants.CHARACTERS){
-                Characters characters = event.asCharacters();
-
-                valueText.append(characters.getData());
-            }
-            else  if (event.getEventType() == XMLStreamConstants.END_ELEMENT){
-                EndElement endElement = event.asEndElement();
-
-                String valueEnd = endElement.getName().getLocalPart();
-
-                if (!valueText.toString().trim().isEmpty())
-                    reflectiveSet(valueEnd, valueText.toString().trim());
-
-                valueText.setLength(0);
-            }
+            return config;
         }
-
-        in.close();
-        reader.close();
-
-        return config;
+        finally {
+            in.close();
+            reader.close();
+        }
     }
 }

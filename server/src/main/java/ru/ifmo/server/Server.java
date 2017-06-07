@@ -66,50 +66,12 @@ public class Server implements Closeable {
         this.config = new ServerConfig(config);
     }
 
-    public static Server start() throws Exception { // реализовать по аналогии с Server start (ServerConfig config)?
-        Loader loader = new Loader();
-
-        ServerConfig config = loader.loader();
-
-        try {
-            if (LOG.isDebugEnabled())
-                LOG.debug("Starting server with config: {}", config);
-
-            Server server = new Server(config);
-
-            server.openConnection();
-            server.startAcceptor();
-
-            LOG.info("Server started on port: {}", config.getPort());
-            return server;
-        }
-        catch (IOException e) {
-            throw new ServerException("Cannot start server on port: " + config.getPort());
-        }
-
+    public static Server start() throws ServerException {
+        return start((String)null);
     }
 
-    public static Server start(String configFile) throws Exception { // реализовать по аналогии с Server start (ServerConfig config)?
-        Loader loader = new Loader(configFile);
-
-        ServerConfig config = loader.loader();
-
-        try {
-            if (LOG.isDebugEnabled())
-                LOG.debug("Starting server with config: {}", config);
-
-            Server server = new Server(config);
-
-            server.openConnection();
-            server.startAcceptor();
-
-            LOG.info("Server started on port: {}", config.getPort());
-            return server;
-        }
-        catch (IOException e) {
-            throw new ServerException("Cannot start server on port: " + config.getPort());
-        }
-
+    public static Server start(String configPath) throws ServerException {
+        return start(new Loader().load(configPath));
     }
 
     /**

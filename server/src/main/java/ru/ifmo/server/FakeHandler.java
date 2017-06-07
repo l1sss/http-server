@@ -6,6 +6,6 @@ package ru.ifmo.server;
 public class FakeHandler implements Handler {
     @Override
     public void handle(Request request, Response response) throws Exception {
-        throw new Exception("Hello");
+        throw new Exception("Test exception");
     }
 }

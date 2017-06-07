@@ -3,50 +3,71 @@ package ru.ifmo.server;
 import java.io.FileInputStream;
 import java.io.InputStream;
 
-import static ru.ifmo.server.MyParse.*;
-
 /**
  * Created by Тарас on 06.06.2017.
  */
 public class Loader {
-    protected String path = "";
 
-    public Loader(String path){
-        this.path = path;
-    }
+    private static final String PROPERTIES_FILE_NAME = "web-server.properties";
+    private static final String XML_FILE_NAME = "web-server.xml";
 
-    public Loader(){
-        super();
-    }
+    public ServerConfig load(String path) throws ServerException{
+        try {
+            //final ServerConfig config;
 
-    public ServerConfig loader()throws Exception{
-        //path = "D:\\Код\\Java\\ifmo\\diploma\\http-server\\server\\src\\main\\resources\\myProp.properties";
-        path = "D:\\Код\\Java\\ifmo\\diploma\\http-server\\server\\src\\main\\resources\\myXML.xml";
+            InputStream in;
+            ConfigType type;
 
-        if (!path.isEmpty()){
-            if (path.endsWith(".xml"))
-                config = new XMLParser(new FileInputStream(path)).parse();
+            if (path != null){
+                in = new FileInputStream(path);
 
-            else if (path.endsWith(".properties"))
-                config = new PropParser(new FileInputStream(path)).parse();
+                if (path.endsWith(".xml"))
+                    type = ConfigType.XML;
 
-            else System.out.println("Неправильный адрес файла");
-        }
-        else{
-            InputStream in = MyParse.class.getClassLoader().getResourceAsStream("myProp.properties");//ищет файл
+                else if (path.endsWith(".properties"))
+                    type = ConfigType.PROPERTIES;
 
-            if (in != null) {
-                config = new PropParser(in).parse();
+                else throw new ServerException("Unsupported file format: " + path + ". Supported xml or properties");
             }
             else {
-                in = MyParse.class.getClassLoader().getResourceAsStream("myXML.xml");//ищет файл
+                in = MyParse.class.getClassLoader().getResourceAsStream(PROPERTIES_FILE_NAME);//ищет файл
 
                 if (in != null) {
-                    config = new XMLParser(in).parse();
+                    type = ConfigType.PROPERTIES;
                 }
-                else throw new ServerException("File not found");// берем значения по умолчанию?
+                else {
+                    in = MyParse.class.getClassLoader().getResourceAsStream(XML_FILE_NAME);//ищет файл
+
+                    if (in != null) {
+                        type = ConfigType.XML;
+                    }
+
+                    else throw new ServerException("File not found");// берем значения по умолчанию?
+                }
             }
+
+            return parse(in, type);
+
+        } catch (Exception e) {
+            throw new ServerException(e.getMessage(), e);
         }
-        return config;
+    }
+
+    private ServerConfig parse(InputStream in, ConfigType type) throws Exception {
+        assert in != null;
+        assert type != null;
+
+        switch (type) {
+            case XML:
+                return new XMLParser(in).parse();
+            case PROPERTIES:
+                return new PropParser(in).parse();
+        }
+
+        throw new ServerException("Unsupported properties type: " + type);
+    }
+
+    private enum ConfigType {
+        XML, PROPERTIES
     }
 }
