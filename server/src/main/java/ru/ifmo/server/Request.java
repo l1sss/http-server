@@ -1,6 +1,5 @@
 package ru.ifmo.server;
 
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.Socket;
@@ -8,6 +7,9 @@ import java.net.URI;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+
+import static ru.ifmo.server.Http.CONTENT_LENGTH;
+import static ru.ifmo.server.Http.CONTENT_TYPE;
 
 /**
  * Keeps request information: method, headers, params
@@ -18,6 +20,7 @@ public class Request {
     final Socket socket;
     HttpMethod method;
     URI path;
+    Body body;
 
     Map<String, String> headers;
     Map<String, String> args;
@@ -62,10 +65,34 @@ public class Request {
         return Collections.unmodifiableMap(headers);
     }
 
-    public void addHeader(String key, String value) {
+    /**
+     * @return Request body.
+     */
+    public Body getBody() {
+        if (body == null)
+            body = new Body();
+
+        return body;
+    }
+
+    /**
+     * add headers in parse process
+     */
+   public void addHeader(String key, String value) {
         if (headers == null)
             headers = new LinkedHashMap<>();
 
+        if (CONTENT_TYPE.equals(key)) {
+            if (body == null)
+                body = new Body();
+            body.contentType = value;
+        }
+
+        else if (CONTENT_LENGTH.equals(key)) {
+            if (body == null)
+                body = new Body();
+            body.contentLength = Integer.parseInt(value);
+        }
 
         headers.put(key, value);
     }
@@ -96,12 +123,5 @@ public class Request {
                 ", headers=" + headers +
                 ", args=" + args +
                 '}';
-    }
-
-    public void setCharSet() {
-    }
-
-    public void setPath(URI path){
-        this.path = path;
     }
 }
