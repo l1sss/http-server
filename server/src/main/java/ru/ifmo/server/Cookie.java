@@ -7,7 +7,7 @@ public class Cookie {
     String name;
     String value;
     String id;
-    String liveTime;
+    String lifeTime;
 
     public Cookie(String name, String value) {
         this.name = name;
@@ -24,6 +24,6 @@ public class Cookie {
         this.name = name;
         this.value = value;
         this.id = id;
-        this.liveTime = liveTime;
+        this.lifeTime = liveTime;
     }
 }

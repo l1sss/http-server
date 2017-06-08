@@ -17,6 +17,7 @@ public class TestExample {
                     public void handle(Request request, Response response) throws Exception {
                         Writer writer = new OutputStreamWriter(response.getOutputStream());
                         writer.write(Http.OK_HEADER + "Hello Test!" +
+                                "\nSessionID: " + request.getSession().getId() +
                                 "\nArguments: " + request.getArguments() +
                                 "\nContent type: " + request.getBody().getContentType() +
                                 "\nContent length: " + request.getBody().getContentLength() +

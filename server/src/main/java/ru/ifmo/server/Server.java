@@ -9,8 +9,9 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.HashMap;
+import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -50,6 +51,7 @@ public class Server implements Closeable {
     private static final char AMP = '&';
     private static final char EQ = '=';
     private static final char HEADER_VALUE_SEPARATOR = ':';
+    private static final String PAIRS_SEPARATOR = "; ";
     private static final char SPACE = ' ';
     private static final int READER_BUF_SIZE = 1024;
 
@@ -57,7 +59,8 @@ public class Server implements Closeable {
 
     private final ServerConfig config;
 
-    private static Map<String, Session> sessions = new HashMap<>();
+    // non-static
+    private Map<String, Session> sessions = new ConcurrentHashMap<>();
 
     private ServerSocket socket;
 
@@ -67,15 +70,7 @@ public class Server implements Closeable {
         this.config = new ServerConfig(config);
     }
 
-    public Map<String, Session> getSessions() {
-        return sessions;
-    }
-
-    public static void setSessions(String key, Session session) {
-        sessions.put(key, session);
-    }
-
-    public static void removeSession(String id) {
+    public void removeSession(String id) {
         sessions.remove(id);
     }
 
@@ -189,6 +184,7 @@ public class Server implements Closeable {
         InputStream in = socket.getInputStream();
 
         Request req = new Request(socket);
+        req.initSessions(sessions);
         StringBuilder sb = new StringBuilder(READER_BUF_SIZE); // TODO
 
         while (readLine(in, sb) > 0) {
@@ -279,6 +275,15 @@ public class Server implements Closeable {
         }
 
         req.addHeader(key, sb.substring(start, len).trim());
+
+        if (key.equals("Cookie")) {
+            String[] pairs = sb.substring(start, len).trim().split(PAIRS_SEPARATOR);
+            for (int i = 0; i < pairs.length; i++) {
+                String pair = pairs[i];
+        String[] keyValue = pair.split("=");
+                req.insertCookie(keyValue[0], keyValue[1]);
+            }
+        }
     }
 
     private void parseTxtBody(InputStream in, StringBuilder sb, Request request) throws IOException {
@@ -378,6 +383,26 @@ public class Server implements Closeable {
                 catch (Exception e) {
                     if (!Thread.currentThread().isInterrupted())
                         LOG.error("Error accepting connection", e);
+                }
+            }
+        }
+    }
+
+    class Invalidator implements Runnable {
+        @Override
+        public void run() {
+            while (!Thread.currentThread().isInterrupted()) {
+                try {
+                    for (Map.Entry<String, Session> pair : sessions.entrySet()) {
+                        LocalDateTime currentTime = LocalDateTime.now();
+                        Thread.sleep(1000);
+                        if (pair.getValue().expire != null && currentTime.isAfter(pair.getValue().expire)) {
+                            pair.getValue().expired = true;
+                            removeSession(pair.getKey());
+                        }
+                    }
+                } catch (InterruptedException e) {
+                    return;
                 }
             }
         }

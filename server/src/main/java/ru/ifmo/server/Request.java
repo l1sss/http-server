@@ -27,6 +27,7 @@ public class Request {
     Map<String, String> headers;
     Map<String, String> args;
     Map<String, String> cookies;
+    Map<String, Session> sessions;
 
     Session session;
 
@@ -134,16 +135,34 @@ public class Request {
         return cookies.get(key);
     }
 
-    private boolean containsSESSIONIDCookie() {
+    /**
+     *
+     * @return if contains session id returns true
+     */
+    private boolean containsSIDCookie() {
         return getCookies().containsKey(SESSION_COOKIE_NAME);
     }
 
     public Session getSession() {
-        if (!containsSESSIONIDCookie()) {
-            session = new Session();
-            Server.setSessions(session.getId(), session);
-        }
+        if (session == null)
+            session = getSession(false);
 
+        return session;
+    }
+
+    void initSessions(Map<String, Session> sessions) {
+        this.sessions = sessions;
+    }
+
+    public Session getSession(boolean isNew) {
+        if (!containsSIDCookie() || isNew) {
+            session = new Session();
+            sessions.put(session.getId(), session);
+        } else {
+            session = sessions.get(getCookieValue(SESSION_COOKIE_NAME));
+            if (session == null)
+                session = getSession(true);
+        }
         return session;
     }
 
