@@ -17,6 +17,8 @@ public class Http {
     public static final String CONTENT_TYPE = "Content-Type";
     public static final char CONTENT_TYPE_SEPARATOR = '/';
 
-    /** OK header that preceded rest response data. */
+    /**
+     * OK header that preceded rest response data.
+     */
     public static final String OK_HEADER = "HTTP/1.0 200 OK\r\n\r\n";
 }

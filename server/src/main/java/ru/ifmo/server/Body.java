@@ -32,7 +32,6 @@ public class Body {
     }
 
     /**
-     *
      * @return String content format
      */
     private String parseFormat() {

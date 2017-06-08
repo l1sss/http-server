@@ -12,6 +12,7 @@ import java.io.IOException;
  * Method {@link #setNextFilter(Filter nextFilter)} will make the chain of filters,
  * which should be executed after the server start, before first handler, and after
  * all handlers.
+ *
  * @see ServerConfig
  * @see Server
  */
@@ -22,8 +23,9 @@ public abstract class Filter {
 
     public abstract void doFilter(Request request, Response response) throws IOException;
 
-    public void setNextFilter(Filter nextFilter){
-        this.nextFilter = nextFilter;}
+    public void setNextFilter(Filter nextFilter) {
+        this.nextFilter = nextFilter;
+    }
 
 
 }

@@ -35,8 +35,7 @@ public class Request {
     public InputStream getInputStream() {
         try {
             return socket.getInputStream();
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             throw new ServerException("Unable retrieve input stream.", e);
         }
     }
@@ -78,7 +77,7 @@ public class Request {
     /**
      * add headers in parse process
      */
-   public void addHeader(String key, String value) {
+    public void addHeader(String key, String value) {
         if (headers == null)
             headers = new LinkedHashMap<>();
 
@@ -86,9 +85,7 @@ public class Request {
             if (body == null)
                 body = new Body();
             body.contentType = value;
-        }
-
-        else if (CONTENT_LENGTH.equals(key)) {
+        } else if (CONTENT_LENGTH.equals(key)) {
             if (body == null)
                 body = new Body();
             body.contentLength = Integer.parseInt(value);

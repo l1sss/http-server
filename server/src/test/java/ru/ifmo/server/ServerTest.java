@@ -49,13 +49,13 @@ public class ServerTest {
                 .addHandler(OPTIONS_URL, new OptionsHandler())
                 .addHandler(DELETE_URL, new SuccessHandler())
                 .addHandler(SERVER_ERROR_URL, new FailHandler())
-                .addHandler(FILTER_URL,new FilterHandler());
+                .addHandler(FILTER_URL, new FilterHandler());
 
-        Filter filter1 = new TestUtils.HeaderFilter("filter1",++cnt);
-        Filter filter2 = new TestUtils.HeaderFilter("filter2",++cnt);
-        Filter filter3 = new TestUtils.HeaderFilter("filter3",++cnt);
+        Filter filter1 = new TestUtils.HeaderFilter("filter1", ++cnt);
+        Filter filter2 = new TestUtils.HeaderFilter("filter2", ++cnt);
+        Filter filter3 = new TestUtils.HeaderFilter("filter3", ++cnt);
 
-        cfg.setFilters(filter1,filter2,filter3);
+        cfg.setFilters(filter1, filter2, filter3);
 
         server = Server.start(cfg);
         client = HttpClients.createDefault();
@@ -110,7 +110,7 @@ public class ServerTest {
 
         assertStatusCode(HttpStatus.SC_OK, response);
         assertEquals(TEST_RESPONSE +
-                    "<br>Access-Control-Allow-Methods: [GET, POST, PUT, DELETE, HEAD, OPTIONS]" +
+                        "<br>Access-Control-Allow-Methods: [GET, POST, PUT, DELETE, HEAD, OPTIONS]" +
                         CLOSE_HTML,
                 EntityUtils.toString(response.getEntity()));
     }
@@ -145,11 +145,11 @@ public class ServerTest {
 
         assertStatusCode(HttpStatus.SC_OK, response);
         assertEquals(TEST_RESPONSE +
-                    "<br>Arguments: {iLoveWriteCode=true, iLoveWriteTests=false, noMoreTests=null}" +
-                    "<br>Content type: null" +
-                    "<br>Content length: 0" +
-                    "<br>Text content: null" +
-                    CLOSE_HTML,
+                        "<br>Arguments: {iLoveWriteCode=true, iLoveWriteTests=false, noMoreTests=null}" +
+                        "<br>Content type: null" +
+                        "<br>Content length: 0" +
+                        "<br>Text content: null" +
+                        CLOSE_HTML,
                 EntityUtils.toString(response.getEntity()));
     }
 
@@ -295,7 +295,7 @@ public class ServerTest {
         assertStatusCode(HttpStatus.SC_OK, response);
         assertEquals(SuccessHandler.TEST_RESPONSE +
                         "<br>Headers: {Host=localhost:8080, Connection=Keep-Alive, "
-                        +"User-Agent=Apache-HttpClient/4.5.2 "
+                        + "User-Agent=Apache-HttpClient/4.5.2 "
                         + "(Java/1.8.0_121), Accept-Encoding=gzip,deflate, filter1=1, filter2=2, filter3=3}" +
                         SuccessHandler.CLOSE_HTML,
                 EntityUtils.toString(response.getEntity()));
