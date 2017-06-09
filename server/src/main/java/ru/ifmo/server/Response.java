@@ -1,28 +1,29 @@
 package ru.ifmo.server;
 
-import java.io.*;
-import java.net.Socket;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Map;
+
+import static ru.ifmo.server.Http.*;
 
 /**
  * Provides {@link java.io.OutputStream} ro respond to client.
  */
 public class Response {
-    final Socket socket;
     int statusCode;
     Map<String, String> headers = new HashMap<>();
     PrintWriter printWriter;
-    long length = -1;
-    String contentType;
-    ByteArrayOutputStream bufferOutputStream;
+    ByteArrayOutputStream bufOut;
 
 
     //GETTER and SETTER//
 
     public void setStatusCode (int code) {
-        if ( (code<100)||(code>505)  ){
-            throw new ServerException("Not valid http status code:" + code);
+        if ((code < 100) || (code > 599)){
+            throw new ServerException("Not valid http status code: " + code);
         }
         statusCode = code;
     }
@@ -47,42 +48,45 @@ public class Response {
         this.headers.put(key, value);
     }
 
-    public String setContentType(String contentType) {
-        return this.contentType = contentType;
+    public void setContentType(String contentType) {
+        headers.put(CONTENT_TYPE, contentType);
+    }
+
+    public String getContentType() {
+        return headers.get(CONTENT_TYPE);
     }
 
     public void setContentLength(long length) {
-        if (length < 0) {
-            throw new RuntimeException("Response Content-Length must be non-negative.");
-        }
+        headers.put("Content-Length", String.valueOf(length));
     }
 
-    Response(Socket socket) {
-        this.socket = socket;
+    public String getContentLength(){
+        return headers.get(CONTENT_LENGTH);
     }
 
     /**
      * @return {@link OutputStream} connected to the client.
      */
     public ByteArrayOutputStream getOutputStreamBuffer() {
-        if (bufferOutputStream == null)
-            bufferOutputStream = new ByteArrayOutputStream();
+        if (bufOut == null)
+            bufOut = new ByteArrayOutputStream();
 
-        return bufferOutputStream;
+        return bufOut;
     }
 
 
     public void setBody(byte[] data) {
         try {
-            getOutputStreamBuffer().write(data);
+            bufOut.write(data);
         } catch (IOException e) {
             throw new ServerException("Cannot get output stream", e);
         }
     }
 
     public PrintWriter getWriter() {
-        if (printWriter==null)
-            printWriter = new PrintWriter(getOutputStreamBuffer());
+        if (printWriter == null)
+            printWriter = new PrintWriter(bufOut);
+
         return printWriter;
     }
 }
