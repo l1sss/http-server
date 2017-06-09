@@ -4,10 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.ifmo.server.util.Utils;
 
-import java.io.Closeable;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URI;
@@ -15,8 +12,8 @@ import java.net.URISyntaxException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static ru.ifmo.server.util.Utils.htmlMessage;
 import static ru.ifmo.server.Http.*;
+import static ru.ifmo.server.util.Utils.htmlMessage;
 
 /**
  * Ifmo Web Server.
@@ -173,18 +170,25 @@ public class Server implements Closeable {
     }
 
     private Request parseRequest(Socket socket) throws IOException, URISyntaxException {
-        InputStreamReader reader = new InputStreamReader(socket.getInputStream());
+        InputStream in = socket.getInputStream();
 
         Request req = new Request(socket);
         StringBuilder sb = new StringBuilder(READER_BUF_SIZE); // TODO
 
-        while (readLine(reader, sb) > 0) {
+        while (readLine(in, sb) > 0) {
             if (req.method == null)
                 parseRequestLine(req, sb);
             else
                 parseHeader(req, sb);
 
             sb.setLength(0);
+        }
+
+        if ((req.getMethod() == HttpMethod.POST || req.getMethod() == HttpMethod.PUT) && req.getBody().contentPresent()) {
+            if (req.getBody().getContentType().contains("text"))
+                parseTxtBody(in, sb, req);
+            else
+                parseBinBody(in, req);
         }
 
         return req;
@@ -197,9 +201,9 @@ public class Server implements Closeable {
         for (int i = 0; i < len; i++) {
             if (sb.charAt(i) == SPACE) {
                 if (req.method == null)
-                    req.method = HttpMethod.valueOf(sb.substring(start, i));
+                    req.method = HttpMethod.valueOf(sb.substring(start, i)); // Parse method
                 else if (req.path == null) {
-                    req.path = new URI(sb.substring(start, i));
+                    req.path = new URI(sb.substring(start, i)); // Parse path
 
                     break; // Ignore protocol for now
                 }
@@ -217,6 +221,7 @@ public class Server implements Closeable {
             start = 0;
 
             String key = null;
+            String value = null;
 
             for (int i = 0; i < query.length(); i++) {
                 boolean last = i == query.length() - 1;
@@ -227,7 +232,9 @@ public class Server implements Closeable {
                     start = i + 1;
                 }
                 else if (key != null && (query.charAt(i) == AMP || last)) {
-                    req.addArgument(key, query.substring(start, last ? i + 1 : i));
+                    value = query.substring(start, last ? i + 1 : i);
+                    if (value.equals("")) value = null;
+                    req.addArgument(key, value);
 
                     key = null;
                     start = i + 1;
@@ -242,8 +249,8 @@ public class Server implements Closeable {
     private void parseHeader(Request req, StringBuilder sb) {
         String key = null;
 
-        int len = sb.length();
         int start = 0;
+        int len = sb.length();
 
         for (int i = 0; i < len; i++) {
             if (sb.charAt(i) == HEADER_VALUE_SEPARATOR) {
@@ -258,16 +265,56 @@ public class Server implements Closeable {
         req.addHeader(key, sb.substring(start, len).trim());
     }
 
-    private int readLine(InputStreamReader in, StringBuilder sb) throws IOException {
+    private void parseTxtBody(InputStream in, StringBuilder sb, Request request) throws IOException {
+        InputStreamReader reader = new InputStreamReader(in);
+
+        int contentLength = request.getBody().getContentLength();
+
+        char[] buf = new char[1024];
+        int len;
+        int count = 0;
+
+        while ((len = reader.read(buf)) > 0) {
+            sb.append(new String(buf, 0, len));
+
+            count += len;
+            if (count == contentLength)
+                break;
+        }
+
+        request.getBody().txtContent = sb.toString();
+    }
+
+    private void parseBinBody(InputStream in, Request request) throws IOException {
+        ByteArrayOutputStream bout = new ByteArrayOutputStream();
+
+        int contentLength = request.getBody().getContentLength();
+
+        byte[] buf = new byte[1024];
+        int len;
+        int count = 0;
+
+        while ((len = in.read(buf)) > 0) {
+            bout.write(buf, 0, len);
+
+            count += len;
+            if (count == contentLength)
+                break;
+        }
+
+        request.getBody().binContent = bout.toByteArray();
+    }
+
+    private int readLine(InputStream in, StringBuilder sb) throws IOException {
         int c;
         int count = 0;
 
         while ((c = in.read()) >= 0) {
-            if (c == LF)
+            if (c == LF) {
                 break;
+            }
 
             sb.append((char) c);
-
             count++;
         }
 
@@ -295,7 +342,14 @@ public class Server implements Closeable {
     }
 
     private boolean isMethodSupported(HttpMethod method) {
-        return method == HttpMethod.GET;
+
+        for (HttpMethod m : HttpMethod.values()) {
+            if (m == method)
+
+                return true;
+        }
+
+        return false;
     }
 
     private class ConnectionHandler implements Runnable {
