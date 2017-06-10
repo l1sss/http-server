@@ -12,6 +12,7 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.net.URI;
@@ -31,9 +32,10 @@ public class ServerTest {
     private static final String SUCCESS_URL = "/test_success";
     private static final String NOT_FOUND_URL = "/test_not_found";
     private static final String SERVER_ERROR_URL = "/test_fail";
-    private static final String POSTANDPUT_URL = "/test_post_and_put";
+    private static final String POST_AND_PUT_URL = "/test_post_and_put";
     private static final String OPTIONS_URL = "/test_options";
     private static final String DELETE_URL = "/test_delete";
+    private static final String SESSION_URL = "/test_session";
 
     private static Server server;
     private static CloseableHttpClient client;
@@ -43,9 +45,10 @@ public class ServerTest {
         ServerConfig cfg = new ServerConfig()
                 .addHandler(SUCCESS_URL, new SuccessHandler())
                 .addHandler(SERVER_ERROR_URL, new FailHandler())
-                .addHandler(POSTANDPUT_URL, new PostAndPutHandler())
+                .addHandler(POST_AND_PUT_URL, new PostAndPutHandler())
                 .addHandler(OPTIONS_URL, new OptionsHandler())
-                .addHandler(DELETE_URL, new SuccessHandler());
+                .addHandler(DELETE_URL, new SuccessHandler())
+                .addHandler(SESSION_URL, new SessionHandler());
 
         server = Server.start(cfg);
         client = HttpClients.createDefault();
@@ -93,6 +96,15 @@ public class ServerTest {
     }
 
     @Test
+    public void testDelete() throws Exception {
+        HttpDelete delete = new HttpDelete(DELETE_URL);
+
+        CloseableHttpResponse response = client.execute(host, delete);
+
+        assertStatusCode(HttpStatus.SC_OK, response);
+    }
+
+    @Test
     public void testOptions() throws Exception {
         HttpOptions options = new HttpOptions(OPTIONS_URL);
 
@@ -107,7 +119,7 @@ public class ServerTest {
 
     @Test
     public void testPostWithEmptyBody() throws Exception {
-        HttpPost post = new HttpPost(POSTANDPUT_URL);
+        HttpPost post = new HttpPost(POST_AND_PUT_URL);
 
         CloseableHttpResponse response = client.execute(host, post);
 
@@ -123,7 +135,7 @@ public class ServerTest {
 
     @Test
     public void testPostWithEmptyBodyAndSomeArguments() throws Exception {
-        URI uri = new URIBuilder(POSTANDPUT_URL)
+        URI uri = new URIBuilder(POST_AND_PUT_URL)
                 .addParameter("iLoveWriteCode", "true")
                 .addParameter("iLoveWriteTests", "false")
                 .addParameter("noMoreTests", "")
@@ -144,17 +156,8 @@ public class ServerTest {
     }
 
     @Test
-    public void testDelete() throws Exception {
-        HttpDelete delete = new HttpDelete(DELETE_URL);
-
-        CloseableHttpResponse response = client.execute(host, delete);
-
-        assertStatusCode(HttpStatus.SC_OK, response);
-    }
-
-    @Test
     public void testPostWithTextContent() throws Exception {
-        HttpPost post = new HttpPost(POSTANDPUT_URL);
+        HttpPost post = new HttpPost(POST_AND_PUT_URL);
         StringEntity entity = new StringEntity("some text in request body");
         post.setEntity(entity);
 
@@ -172,7 +175,7 @@ public class ServerTest {
 
     @Test
     public void testPostWithTextContentAndSomeArguments() throws Exception {
-        URI uri = new URIBuilder(POSTANDPUT_URL)
+        URI uri = new URIBuilder(POST_AND_PUT_URL)
                 .addParameter("test1", "noMore")
                 .addParameter("test2", "") //!!!
                 .addParameter("test3", "soBoring")
@@ -196,7 +199,7 @@ public class ServerTest {
 
     @Test
     public void testPutWithEmptyBody() throws Exception {
-        HttpPut put = new HttpPut(POSTANDPUT_URL);
+        HttpPut put = new HttpPut(POST_AND_PUT_URL);
 
         CloseableHttpResponse response = client.execute(host, put);
 
@@ -212,7 +215,7 @@ public class ServerTest {
 
     @Test
     public void testPutWithEmptyBodyAndSomeArguments() throws Exception {
-        URI uri = new URIBuilder(POSTANDPUT_URL)
+        URI uri = new URIBuilder(POST_AND_PUT_URL)
                 .addParameter("iLoveWriteCode", "true")
                 .addParameter("iLoveWriteTests", "false")
                 .addParameter("noMoreTests", "")
@@ -234,7 +237,7 @@ public class ServerTest {
 
     @Test
     public void testPutWithTextContent() throws Exception {
-        HttpPut put = new HttpPut(POSTANDPUT_URL);
+        HttpPut put = new HttpPut(POST_AND_PUT_URL);
         StringEntity entity = new StringEntity("some text in request body");
         put.setEntity(entity);
 
@@ -252,7 +255,7 @@ public class ServerTest {
 
     @Test
     public void testPutWithTextContentAndSomeArguments() throws Exception {
-        URI uri = new URIBuilder(POSTANDPUT_URL)
+        URI uri = new URIBuilder(POST_AND_PUT_URL)
                 .addParameter("test1", "noMore")
                 .addParameter("test2", "") //!!!
                 .addParameter("test3", "soBoring")
@@ -272,6 +275,18 @@ public class ServerTest {
                         "<br>Text content: some text in request body" +
                         CLOSE_HTML,
                 EntityUtils.toString(response.getEntity()));
+    }
+
+    @Ignore
+    public void testSession() throws Exception {
+        HttpGet get = new HttpGet(SESSION_URL);
+
+        CloseableHttpResponse response = client.execute(host, get);
+        CloseableHttpResponse response2 = client.execute(host, get);
+
+        assertStatusCode(HttpStatus.SC_OK, response);
+        assertStatusCode(HttpStatus.SC_OK, response2);
+        assertEquals(1, server.getSessions().size());
     }
 
     @Test
