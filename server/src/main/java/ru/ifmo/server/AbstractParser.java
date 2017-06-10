@@ -3,8 +3,6 @@ package ru.ifmo.server;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import static ru.ifmo.server.MyParse.*;
-
 /**
  * Created by Тарас on 03.06.2017.
  */
@@ -22,8 +20,8 @@ public abstract class AbstractParser implements Parser {
         config.addHandler(url, (Handler) Class.forName(className).newInstance());
     }
 
-    protected void addFilter(String className) throws Exception {
-        //config.addFilter(className);
+    protected void setFilters(String className) throws Exception {
+        //config.setFilters((Filter) Class.forName(className).newInstance());
     }
 
     protected void reflectiveSet(String key, String value) throws ReflectiveOperationException {

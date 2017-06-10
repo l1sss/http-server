@@ -1,5 +1,6 @@
 package ru.ifmo.server;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 
@@ -13,8 +14,6 @@ public class Loader {
 
     public ServerConfig load(String path) throws ServerException{
         try {
-            //final ServerConfig config;
-
             InputStream in;
             ConfigType type;
 
@@ -30,19 +29,19 @@ public class Loader {
                 else throw new ServerException("Unsupported file format: " + path + ". Supported xml or properties");
             }
             else {
-                in = MyParse.class.getClassLoader().getResourceAsStream(PROPERTIES_FILE_NAME);//ищет файл
+                in = Server.class.getClassLoader().getResourceAsStream(PROPERTIES_FILE_NAME);//ищет файл
 
                 if (in != null) {
                     type = ConfigType.PROPERTIES;
                 }
                 else {
-                    in = MyParse.class.getClassLoader().getResourceAsStream(XML_FILE_NAME);//ищет файл
+                    in = Server.class.getClassLoader().getResourceAsStream(XML_FILE_NAME);//ищет файл
 
                     if (in != null) {
                         type = ConfigType.XML;
                     }
 
-                    else throw new ServerException("File not found");// берем значения по умолчанию?
+                    else return new ServerConfig();
                 }
             }
 

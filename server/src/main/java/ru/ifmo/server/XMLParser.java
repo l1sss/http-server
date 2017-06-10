@@ -16,7 +16,7 @@ public class XMLParser extends AbstractParser {
         super(in);
     }
 
-    public ServerConfig parse() throws IOException, XMLStreamException, ReflectiveOperationException {
+    public ServerConfig parse() throws Exception {
         XMLInputFactory factory = XMLInputFactory.newFactory();
 
         StringBuilder valueText = new StringBuilder();
@@ -41,9 +41,8 @@ public class XMLParser extends AbstractParser {
                         addHandler(attUrl.getValue(), attClass.getValue());
 
                     else if ("filter".equals(tagStart) && attClass != null){
-                        //addFilter(attClass.getValue()); жду фильтра
-                    }                                           // надо выбрасывать искл если нет ни хендлеров ни фильтров?
-                                                                // или их просто не будет в загрузке?
+                        setFilters(attClass.getValue()); //жду фильтра
+                    }
                 }
                 else if (event.getEventType() == XMLStreamConstants.CHARACTERS){
                     Characters characters = event.asCharacters();

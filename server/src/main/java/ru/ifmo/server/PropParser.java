@@ -34,6 +34,12 @@ public class PropParser extends AbstractParser {
                     addHandler(hand[0], hand[1]);
                 }
             }
+            else if ("filters".equals(key)){
+                String[] filters = prop.getProperty(key).split(",");
+
+                for (String filter : filters)
+                    setFilters(filter.trim());
+            }
             else
                 reflectiveSet(key, prop.getProperty(key));
         }
