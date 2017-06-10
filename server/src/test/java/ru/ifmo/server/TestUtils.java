@@ -49,7 +49,7 @@ public final class TestUtils {
         }
 
         @Override
-        public void doFilter(Request request, Response response) throws IOException {
+        public void doFilter(Request request, Response response) throws Exception {
 
             request.addHeader(name, String.valueOf(x));
 

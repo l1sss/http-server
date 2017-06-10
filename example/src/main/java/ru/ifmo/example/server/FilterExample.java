@@ -2,8 +2,6 @@ package ru.ifmo.example.server;
 
 import ru.ifmo.server.*;
 
-import java.io.IOException;
-
 /**
  * simple example, with demonstration
  * of the filtering the query.
@@ -42,7 +40,7 @@ public class FilterExample {
         }
 
         @Override
-        public void doFilter(Request request, Response response) throws IOException {
+        public void doFilter(Request request, Response response) throws Exception {
             System.out.println("Filter " + x + " before");
 
             request.addHeader("HeaderFromFilter" + x, value);

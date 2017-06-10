@@ -289,14 +289,14 @@ public class ServerTest {
 
         URI uri = new URIBuilder(FILTER_URL).build();
         HttpRequest request = new HttpGet(uri);
+        request.addHeader("User-Agent", "TestAgent");
 
         CloseableHttpResponse response = client.execute(host, request);
 
         assertStatusCode(HttpStatus.SC_OK, response);
         assertEquals(SuccessHandler.TEST_RESPONSE +
-                        "<br>Headers: {Host=localhost:8080, Connection=Keep-Alive, "
-                        + "User-Agent=Apache-HttpClient/4.5.2 "
-                        + "(Java/1.8.0_121), Accept-Encoding=gzip,deflate, filter1=1, filter2=2, filter3=3}" +
+                        "<br>Headers: {Accept-Encoding=gzip,deflate, Connection=Keep-Alive, " +
+                        "Host=localhost:8080, User-Agent=TestAgent, filter1=1, filter2=2, filter3=3}" +
                         SuccessHandler.CLOSE_HTML,
                 EntityUtils.toString(response.getEntity()));
     }

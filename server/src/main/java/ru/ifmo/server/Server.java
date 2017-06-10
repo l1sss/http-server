@@ -161,8 +161,21 @@ public class Server implements Closeable {
             return;
         }
 
-        config.firstFilter.doFilter(req, new Response());
+        Response response = new Response();
 
+        try {
+            config.firstFilter.doFilter(req, response);
+        } catch (Exception e) {
+            if (LOG.isDebugEnabled())
+                LOG.error("Server error:", e);
+
+            respond(SC_SERVER_ERROR, "Server Error", htmlMessage(SC_SERVER_ERROR + " Server error"),
+                    sock.getOutputStream());
+
+            return;
+        }
+
+        responseToClient(response, sock.getOutputStream());
     }
 
 
@@ -381,26 +394,17 @@ public class Server implements Closeable {
     public class TailFilter extends Filter {
 
         @Override
-        public void doFilter(Request req, Response response) throws IOException {
-
-            Socket sock = req.socket;
-
+        public void doFilter(Request req, Response response) throws Exception {
             Handler handler = config.handler(req.getPath());
-            Response resp = new Response();
 
             if (handler != null) {
-                try {
-                    handler.handle(req, resp);
-                } catch (Exception e) {
-                    if (LOG.isDebugEnabled())
-                        LOG.error("Server error:", e);
-
-                    respond(SC_SERVER_ERROR, "Server Error", htmlMessage(SC_SERVER_ERROR + " Server error"),
-                            sock.getOutputStream());
-                }
-            } else
-                respond(SC_NOT_FOUND, "Not Found", htmlMessage(SC_NOT_FOUND + " Not found"),
-                        sock.getOutputStream());
+                handler.handle(req, response);
+            } else {
+                response.printWriter = null;
+                response.bufOut = new ByteArrayOutputStream();
+                response.setStatusCode(SC_NOT_FOUND);
+                response.getWriter().write(htmlMessage(SC_NOT_FOUND + " Not found"));
+            }
         }
     }
 
