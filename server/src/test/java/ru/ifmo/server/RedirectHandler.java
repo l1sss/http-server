@@ -1,12 +1,12 @@
 package ru.ifmo.server;
 
 /**
- * Throws exception on handle method.
+ * Created by HomePC on 07.06.2017.
  */
-public class FailHandler implements Handler {
+public class RedirectHandler implements Handler {
     @Override
     public void handle(Request request, Response response) throws Exception {
-        throw new Exception("Test exception");
-
+        response.Redirect("http://mail.ru");
     }
 }
+

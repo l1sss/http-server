@@ -92,4 +92,7 @@ public class Request {
                 ", args=" + args +
                 '}';
     }
+
+    public void setMethod(String get) {
+    }
 }

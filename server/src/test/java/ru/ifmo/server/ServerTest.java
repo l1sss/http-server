@@ -4,7 +4,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpStatus;
-import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.*;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -16,29 +15,31 @@ import org.junit.Test;
 
 import java.net.URI;
 
-import static org.junit.Assert.*;
-import static ru.ifmo.server.TestUtils.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static ru.ifmo.server.TestUtils.assertStatusCode;
 
 /**
  * Tests main server functionality.
  */
 public class ServerTest {
-    private static final HttpHost host = new HttpHost("localhost", ServerConfig.DFLT_PORT);
+    private static final HttpHost host = new HttpHost("localhost", 8088);
 
     private static final String SUCCESS_URL = "/test_success";
     private static final String NOT_FOUND_URL = "/test_not_found";
     private static final String SERVER_ERROR_URL = "/test_fail";
-
+    private static final String REDIRECT_URL = "/test_redirect";
     private static Server server;
     private static CloseableHttpClient client;
 
     @BeforeClass
     public static void initialize() {
-        ServerConfig cfg = new ServerConfig()
-                .addHandler(SUCCESS_URL, new SuccessHandler())
-                .addHandler(SERVER_ERROR_URL, new FailHandler());
+        ServerConfig cfg = new ServerConfig();
+        cfg.addHandler(SUCCESS_URL, new SuccessHandler());
+        cfg.addHandler(SERVER_ERROR_URL, new FailHandler());
+        cfg.addHandler(REDIRECT_URL, new RedirectHandler());
 
-        server = Server.start(cfg);
+        server = Server.start(cfg.setPort(8088));
         client = HttpClients.createDefault();
     }
 
@@ -143,6 +144,18 @@ public class ServerTest {
         HttpRequest request = new HttpPatch(SUCCESS_URL);
 
         assertNotImplemented(request);
+    }
+
+    @Test
+    public void testRedirect() throws Exception {
+       HttpGet get = new HttpGet(REDIRECT_URL);
+
+        CloseableHttpResponse response = client.execute(host, get);
+
+        assertStatusCode(HttpStatus.SC_OK, response);
+      //  assertEquals(SuccessHandler.TEST_RESPONSE + response.get +
+      //                  SuccessHandler.CLOSE_HTML,
+      //          EntityUtils.toString(response.getEntity()));
     }
 
     private void assertNotImplemented(HttpRequest request) throws Exception {

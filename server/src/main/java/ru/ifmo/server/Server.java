@@ -4,10 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.ifmo.server.util.Utils;
 
-import java.io.Closeable;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URI;
@@ -15,8 +12,8 @@ import java.net.URISyntaxException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static ru.ifmo.server.util.Utils.htmlMessage;
 import static ru.ifmo.server.Http.*;
+import static ru.ifmo.server.util.Utils.htmlMessage;
 
 /**
  * Ifmo Web Server.
@@ -54,14 +51,10 @@ public class Server implements Closeable {
     private static final char HEADER_VALUE_SEPARATOR = ':';
     private static final char SPACE = ' ';
     private static final int READER_BUF_SIZE = 1024;
-
-    private final ServerConfig config;
-
-    private ServerSocket socket;
-
-    private ExecutorService acceptorPool;
-
     private static final Logger LOG = LoggerFactory.getLogger(Server.class);
+    private final ServerConfig config;
+    private ServerSocket socket;
+    private ExecutorService acceptorPool;
     private String location;
 
     private Server(ServerConfig config) {
@@ -166,12 +159,16 @@ public class Server implements Closeable {
             }
 
 
+
             if (resp.location != null) {
+                Writer writer = new OutputStreamWriter(resp.getOutputStream());
+                sock.getOutputStream().write(("HTTP/1.0 301 OK " + CRLF + "status: Permanently moved" + CRLF + "Location: "
+                        + resp.location + CRLF + CRLF).getBytes());
+                writer.flush();
+            }
+            if (resp.resource !=null) {
 
-                resp.sendRedirect("http://mail.ru");
 
-
-                sock.getOutputStream().write(("HTTP/1.0 301 OK\r\n " + "status: Permanently moved" + " location: " + "http://mail.ru\r\n\r\n").getBytes());
             }
 
 
@@ -197,6 +194,7 @@ public class Server implements Closeable {
         }
 
         return req;
+
     }
 
     private void parseRequestLine(Request req, StringBuilder sb) throws URISyntaxException {

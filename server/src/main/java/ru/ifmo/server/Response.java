@@ -1,6 +1,6 @@
 package ru.ifmo.server;
 
-import javax.xml.soap.MimeHeaders;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Socket;
@@ -10,8 +10,8 @@ import java.net.Socket;
  */
 public class Response {
     final Socket socket;
-    public Object location;
-
+    public String location=null;
+    public String resource;
 
 
     Response(Socket socket) {
@@ -33,7 +33,8 @@ public class Response {
 
     }
 
-    public void sendRedirect(String location) throws IOException {
+    public void Redirect(String location) throws IOException {
+
         this.location = location;
 
 
@@ -41,7 +42,10 @@ public class Response {
     }
 
 
-    public void forward(String resource) {
+    protected void Forward(String resource) throws IOException {
+        this.resource = resource;
+    }
 
     }
-}
+
+
