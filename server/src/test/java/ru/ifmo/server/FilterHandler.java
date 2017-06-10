@@ -7,8 +7,8 @@ import static ru.ifmo.server.SuccessHandler.TEST_RESPONSE;
 public class FilterHandler implements Handler {
     @Override
     public void handle(Request request, Response response) throws Exception {
-        response.getOutputStream().write((OK_HEADER + TEST_RESPONSE +
-                "<br>Headers: " + request.getHeaders() + CLOSE_HTML).getBytes());
-        response.getOutputStream().flush();
+        response.getWriter().write((OK_HEADER + TEST_RESPONSE +
+                "<br>Headers: " + request.getHeaders() + CLOSE_HTML));
+
     }
 }

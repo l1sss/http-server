@@ -161,7 +161,7 @@ public class Server implements Closeable {
             return;
         }
 
-        config.firstFilter.doFilter(req, new Response(req.socket));
+        config.firstFilter.doFilter(req, new Response());
 
     }
 
@@ -386,7 +386,7 @@ public class Server implements Closeable {
             Socket sock = req.socket;
 
             Handler handler = config.handler(req.getPath());
-            Response resp = new Response(req.socket);
+            Response resp = new Response();
 
             if (handler != null) {
                 try {

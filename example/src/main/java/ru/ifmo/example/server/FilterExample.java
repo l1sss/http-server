@@ -3,8 +3,6 @@ package ru.ifmo.example.server;
 import ru.ifmo.server.*;
 
 import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
 
 /**
  * simple example, with demonstration
@@ -18,9 +16,9 @@ public class FilterExample {
                 .addHandler("/filter", new Handler() {
                     @Override
                     public void handle(Request request, Response response) throws Exception {
-                        Writer writer = new OutputStreamWriter(response.getOutputStream());
-                        writer.write(Http.OK_HEADER + request.getHeaders());
-                        writer.flush();
+
+                       response.getWriter().write(Http.OK_HEADER + request.getHeaders());
+
                     }
                 });
 
