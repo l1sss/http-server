@@ -13,6 +13,8 @@ import java.util.Map;
  * and provides {@link java.io.InputStream} to get additional data
  * from client.
  */
+
+//ifmo 12
 public class Request {
     final Socket socket;
     HttpMethod method;
