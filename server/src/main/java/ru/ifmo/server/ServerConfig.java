@@ -108,7 +108,7 @@ public class ServerConfig {
         this.handlers = handlers;
     }
 ;
-
+/*                                                      MYCLASS
 private class clazz  {
 
 
@@ -119,41 +119,8 @@ private class clazz  {
 
 
 }
+*/
 
-    /*
-     Automatic handler creation with reflection.
- User should be free of handler creation on configuration stage. Add proper methods in ServerConfig:
- ServerConfig.addHandlerClass(String resource, Class<? extends Handler> hndCls): ServerConfig
- ServerConfig.addHandlerClasses(Map<String, Class<? extends Handler> handlers): ServerConfig
- // They should match regular handler configurations.
-
- Add annotation or/and interface that will force process handler only in one thread
- (f.e. @SingleThreaded, SingleThreaded). Create it once but associate with specific thread.
-
-      */
-
-    /*
-    private class handlerReflectParam implements Runnable{
-        void beginReflect() {
-            handlerReflectParam = Executors.newSingleThreadExecutor(new ServerThreadFactory
-                    ("handler-reflect"));}
-
-        public void run() {
-            handlerReflectParam.execute(new Runnable() {
-                @Override
-                public void run() {
-
-                    if (Handler.class != null)
-
-                    {}
-                    
-                }
-
-
-            });
-        }
-
-    } */
     /**
      * @return Socket timeout value.
      */
