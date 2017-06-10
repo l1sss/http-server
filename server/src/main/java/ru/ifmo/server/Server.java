@@ -165,7 +165,7 @@ public class Server implements Closeable {
         }
 
         Handler handler = config.handler(req.getPath());
-        Response resp = new Response(sock);
+        Response resp = new Response();
 
         if (handler != null) {
             try {
@@ -178,10 +178,40 @@ public class Server implements Closeable {
                 respond(SC_SERVER_ERROR, "Server Error", htmlMessage(SC_SERVER_ERROR + " Server error"),
                         sock.getOutputStream());
             }
+
+            responseToClient(resp, sock.getOutputStream());
         }
         else
             respond(SC_NOT_FOUND, "Not Found", htmlMessage(SC_NOT_FOUND + " Not found"),
                     sock.getOutputStream());
+    }
+
+    private void responseToClient(Response response, OutputStream out) throws IOException {
+        try {
+            if (response.statusCode == 0)
+                response.statusCode = SC_OK;
+
+            if (response.printWriter != null)
+                response.printWriter.flush();
+
+            if (response.bufOut != null && response.getContentLength() == null)
+                response.setHeader(CONTENT_LENGTH, String.valueOf(response.bufOut.size()));
+
+            out.write(("HTTP/1.0" + SPACE + response.statusCode + CRLF).getBytes());
+
+            for (Map.Entry<String, String> entry : response.headers.entrySet())
+                out.write((entry.getKey() + ":" + SPACE + entry.getValue() + CRLF).getBytes());
+
+            out.write(CRLF.getBytes());
+
+            if (response.bufOut != null)
+                out.write(response.bufOut.toByteArray());
+
+            out.flush();
+
+        } catch (IOException e) {
+            throw new ServerException("Cannot get output stream", e);
+        }
     }
 
     private Request parseRequest(Socket socket) throws IOException, URISyntaxException {

@@ -11,6 +11,7 @@ import java.util.Map;
 
 import static ru.ifmo.server.Http.CONTENT_LENGTH;
 import static ru.ifmo.server.Http.CONTENT_TYPE;
+
 import static ru.ifmo.server.Session.SESSION_COOKIE_NAME;
 
 /**
@@ -91,6 +92,7 @@ public class Request {
             if (body == null)
                 body = new Body();
             body.contentType = value;
+
         } else if (CONTENT_LENGTH.equals(key)) {
             if (body == null)
                 body = new Body();

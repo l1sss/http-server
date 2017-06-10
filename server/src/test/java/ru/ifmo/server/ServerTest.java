@@ -112,7 +112,7 @@ public class ServerTest {
 
         assertStatusCode(HttpStatus.SC_OK, response);
         assertEquals(TEST_RESPONSE +
-                    "<br>Access-Control-Allow-Methods: [GET, POST, PUT, DELETE, HEAD, OPTIONS]" +
+                        "<br>Access-Control-Allow-Methods: [GET, POST, PUT, DELETE, HEAD, OPTIONS]" +
                         CLOSE_HTML,
                 EntityUtils.toString(response.getEntity()));
     }
@@ -147,11 +147,11 @@ public class ServerTest {
 
         assertStatusCode(HttpStatus.SC_OK, response);
         assertEquals(TEST_RESPONSE +
-                    "<br>Arguments: {iLoveWriteCode=true, iLoveWriteTests=false, noMoreTests=null}" +
-                    "<br>Content type: null" +
-                    "<br>Content length: 0" +
-                    "<br>Text content: null" +
-                    CLOSE_HTML,
+                        "<br>Arguments: {iLoveWriteCode=true, iLoveWriteTests=false, noMoreTests=null}" +
+                        "<br>Content type: null" +
+                        "<br>Content length: 0" +
+                        "<br>Text content: null" +
+                        CLOSE_HTML,
                 EntityUtils.toString(response.getEntity()));
     }
 
