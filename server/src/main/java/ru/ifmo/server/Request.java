@@ -8,6 +8,9 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import static ru.ifmo.server.Http.CONTENT_LENGTH;
+import static ru.ifmo.server.Http.CONTENT_TYPE;
+
 /**
  * Keeps request information: method, headers, params
  * and provides {@link java.io.InputStream} to get additional data
@@ -17,6 +20,7 @@ public class Request {
     final Socket socket;
     HttpMethod method;
     URI path;
+    Body body;
 
     Map<String, String> headers;
     Map<String, String> args;
@@ -31,8 +35,7 @@ public class Request {
     public InputStream getInputStream() {
         try {
             return socket.getInputStream();
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             throw new ServerException("Unable retrieve input stream.", e);
         }
     }
@@ -51,6 +54,9 @@ public class Request {
         return path.getPath();
     }
 
+    /**
+     * @return Request headers.
+     */
     public Map<String, String> getHeaders() {
         if (headers == null)
             return Collections.emptyMap();
@@ -58,9 +64,32 @@ public class Request {
         return Collections.unmodifiableMap(headers);
     }
 
-    void addHeader(String key, String value) {
+    /**
+     * @return Request body.
+     */
+    public Body getBody() {
+        if (body == null)
+            body = new Body();
+
+        return body;
+    }
+
+    /**
+     * add headers in parse process
+     */
+    public void addHeader(String key, String value) {
         if (headers == null)
             headers = new LinkedHashMap<>();
+
+        if (CONTENT_TYPE.equals(key)) {
+            if (body == null)
+                body = new Body();
+            body.contentType = value;
+        } else if (CONTENT_LENGTH.equals(key)) {
+            if (body == null)
+                body = new Body();
+            body.contentLength = Integer.parseInt(value);
+        }
 
         headers.put(key, value);
     }

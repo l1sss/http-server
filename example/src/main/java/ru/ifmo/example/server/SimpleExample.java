@@ -32,14 +32,13 @@ public class SimpleExample {
         }
         else
             System.out.println(">>> Open " + infoPage);
-
     }
 
     private static class InfoHandler implements Handler {
         @Override
         public void handle(Request request, Response response) throws Exception {
             // Set correct header
-            StringBuilder sb = new StringBuilder(Http.OK_HEADER);
+            StringBuilder sb = new StringBuilder();
 
             // Set doctype
             sb.append("<!DOCTYPE html>");
@@ -85,8 +84,7 @@ public class SimpleExample {
             sb.append("</body></html>");
 
             // Write everything to output
-            response.getOutputStream().write(sb.toString().getBytes());
-            response.getOutputStream().flush();
+            response.getWriter().write(sb.toString());
         }
     }
 }
