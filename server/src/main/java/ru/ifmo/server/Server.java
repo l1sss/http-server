@@ -16,6 +16,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import static ru.ifmo.server.Http.*;
+import static ru.ifmo.server.Session.SESSION_COOKIE_NAME;
 import static ru.ifmo.server.util.Utils.htmlMessage;
 
 /**
@@ -59,7 +60,6 @@ public class Server implements Closeable {
 
     private final ServerConfig config;
 
-    // non-static
     private Map<String, Session> sessions = new ConcurrentHashMap<>();
 
     private ServerSocket socket;
@@ -98,6 +98,7 @@ public class Server implements Closeable {
 
             server.openConnection();
             server.startAcceptor();
+            server.startInvalidator();
 
             LOG.info("Server started on port: {}", config.getPort());
             return server;
@@ -115,6 +116,10 @@ public class Server implements Closeable {
         acceptorPool = Executors.newSingleThreadExecutor(new ServerThreadFactory("con-acceptor"));
 
         acceptorPool.submit(new ConnectionHandler());
+    }
+
+    private void startInvalidator() {
+        new Thread(new Invalidator()).start();
     }
 
     /**
@@ -179,14 +184,14 @@ public class Server implements Closeable {
                         sock.getOutputStream());
             }
 
-            responseToClient(resp, sock.getOutputStream());
+            responseToClient(req, resp, sock.getOutputStream());
         }
         else
             respond(SC_NOT_FOUND, "Not Found", htmlMessage(SC_NOT_FOUND + " Not found"),
                     sock.getOutputStream());
     }
 
-    private void responseToClient(Response response, OutputStream out) throws IOException {
+    private void responseToClient(Request request, Response response, OutputStream out) throws IOException {
         try {
             if (response.statusCode == 0)
                 response.statusCode = SC_OK;
@@ -201,6 +206,21 @@ public class Server implements Closeable {
 
             for (Map.Entry<String, String> entry : response.headers.entrySet())
                 out.write((entry.getKey() + ":" + SPACE + entry.getValue() + CRLF).getBytes());
+
+            if (request.getSession() != null) {
+                response.setCookies(new Cookie(SESSION_COOKIE_NAME, request.getSession().getId()));
+            }
+
+            if (response.cookies != null) {
+                for (Cookie cookie : response.cookies) {
+                    StringBuilder cookieline = new StringBuilder()
+                            .append(cookie.name + "=" + cookie.value);
+
+                    if (cookie.lifeTime != null) cookieline.append(";MAX-AGE=" + cookie.lifeTime);
+
+                    out.write(("Set-Cookie:" + SPACE + cookieline.toString() + CRLF).getBytes());
+                }
+            }
 
             out.write(CRLF.getBytes());
 

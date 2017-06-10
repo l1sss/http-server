@@ -15,7 +15,7 @@ import static ru.ifmo.server.Http.*;
  * Provides {@link java.io.OutputStream} ro respond to client.
  */
 public class Response {
-    List<Cookie> resCookies;
+    List<Cookie> cookies;
     int statusCode;
     Map<String, String> headers = new HashMap<>();
     PrintWriter printWriter;
@@ -86,10 +86,14 @@ public class Response {
     }
 
     public void setCookies(Cookie cookie) {
-        if (resCookies == null)
-            resCookies = new ArrayList<>();
+        if (cookies == null)
+            cookies = new ArrayList<>();
 
-        resCookies.add(cookie);
+        cookies.add(cookie);
+    }
+
+    public List<Cookie> getCookies() {
+        return cookies;
     }
 
     public PrintWriter getWriter() {

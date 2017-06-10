@@ -277,7 +277,7 @@ public class ServerTest {
                 EntityUtils.toString(response.getEntity()));
     }
 
-    @Ignore
+    @Test
     public void testSession() throws Exception {
         HttpGet get = new HttpGet(SESSION_URL);
 
