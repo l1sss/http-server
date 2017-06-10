@@ -1,4 +1,5 @@
 package ru.ifmo.server;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,6 +57,8 @@ public class Server implements Closeable {
 
     private ServerSocket socket;
 
+    private ExecutorService sockProcessorPool;
+
     private ExecutorService acceptorPool;
 
     private static final Logger LOG = LoggerFactory.getLogger(Server.class);
@@ -94,7 +97,7 @@ public class Server implements Closeable {
             Server server = new Server(config);
 
             server.openConnection();
-            server.startAcceptor();
+            server.startPools();
 
             LOG.info("Server started on port: {}", config.getPort());
             return server;
@@ -108,10 +111,11 @@ public class Server implements Closeable {
         socket = new ServerSocket(config.getPort());
     }
 
-    private void startAcceptor() {
+    private void startPools() {
         acceptorPool = Executors.newSingleThreadExecutor(new ServerThreadFactory("con-acceptor"));
+        sockProcessorPool = Executors.newCachedThreadPool(new ServerThreadFactory("exec-handler"));
 
-        acceptorPool.submit(new ConnectionHandler());
+        acceptorPool.execute(new ConnectionHandler());
     }
 
     /**
@@ -119,6 +123,7 @@ public class Server implements Closeable {
      */
     public void stop() {
         acceptorPool.shutdownNow();
+        sockProcessorPool.shutdownNow();
         Utils.closeQuiet(socket);
 
         socket = null;
@@ -412,16 +417,28 @@ public class Server implements Closeable {
     private class ConnectionHandler implements Runnable {
         public void run() {
             while (!Thread.currentThread().isInterrupted()) {
-                try (Socket sock = socket.accept()) {
+                try {
+                    Socket sock = socket.accept();
+
                     sock.setSoTimeout(config.getSocketTimeout());
 
-                    processConnection(sock);
-                }
-                catch (Exception e) {
+                    //processConnection(sock);
+                    // incapsulate multithread sock execution
+                    sockProcessorPool.execute(() -> {
+                        try {
+                            processConnection(sock);
+                        } catch (IOException e) {
+                            LOG.error("Error processing connection", e);
+                        } finally {
+                            Utils.closeQuiet(sock);
+                        }
+                    });
+
+                } catch (Exception e) {
                     if (!Thread.currentThread().isInterrupted())
                         LOG.error("Error accepting connection", e);
                 }
             }
         }
     }
-}
+    }
