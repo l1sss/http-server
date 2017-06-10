@@ -61,6 +61,17 @@ public class Server implements Closeable {
     private static final Logger LOG = LoggerFactory.getLogger(Server.class);
 
     private Server(ServerConfig config) {
+        if (config.filters == null || config.filters.length == 0)
+            config.firstFilter = new TailFilter();
+        else {
+            config.firstFilter = config.filters[0];
+
+            for (int i = 1; i < config.filters.length; i++)
+                config.filters[i - 1].setNextFilter(config.filters[i]);
+
+            config.filters[config.filters.length - 1].setNextFilter(new TailFilter());
+        }
+
         this.config = new ServerConfig(config);
     }
 
@@ -150,27 +161,23 @@ public class Server implements Closeable {
             return;
         }
 
-        Handler handler = config.handler(req.getPath());
-        Response resp = new Response();
+        Response response = new Response();
 
-        if (handler != null) {
-            try {
-                handler.handle(req, resp);
-            }
-            catch (Exception e) {
-                if (LOG.isDebugEnabled())
-                    LOG.error("Server error:", e);
+        try {
+            config.firstFilter.doFilter(req, response);
+        } catch (Exception e) {
+            if (LOG.isDebugEnabled())
+                LOG.error("Server error:", e);
 
-                respond(SC_SERVER_ERROR, "Server Error", htmlMessage(SC_SERVER_ERROR + " Server error"),
-                        sock.getOutputStream());
-            }
-
-            responseToClient(resp, sock.getOutputStream());
-        }
-        else
-            respond(SC_NOT_FOUND, "Not Found", htmlMessage(SC_NOT_FOUND + " Not found"),
+            respond(SC_SERVER_ERROR, "Server Error", htmlMessage(SC_SERVER_ERROR + " Server error"),
                     sock.getOutputStream());
+
+            return;
+        }
+
+        responseToClient(response, sock.getOutputStream());
     }
+
 
     private void responseToClient(Response response, OutputStream out) throws IOException {
         try {
@@ -382,6 +389,25 @@ public class Server implements Closeable {
 
         return false;
     }
+
+
+    public class TailFilter extends Filter {
+
+        @Override
+        public void doFilter(Request req, Response response) throws Exception {
+            Handler handler = config.handler(req.getPath());
+
+            if (handler != null) {
+                handler.handle(req, response);
+            } else {
+                response.printWriter = null;
+                response.bufOut = new ByteArrayOutputStream();
+                response.setStatusCode(SC_NOT_FOUND);
+                response.getWriter().write(htmlMessage(SC_NOT_FOUND + " Not found"));
+            }
+        }
+    }
+
 
     private class ConnectionHandler implements Runnable {
         public void run() {

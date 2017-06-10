@@ -77,7 +77,7 @@ public class Response {
 
     public void setBody(byte[] data) {
         try {
-            bufOut.write(data);
+            getOutputStreamBuffer().write(data);
         } catch (IOException e) {
             throw new ServerException("Cannot get output stream", e);
         }
@@ -85,7 +85,7 @@ public class Response {
 
     public PrintWriter getWriter() {
         if (printWriter == null)
-            printWriter = new PrintWriter(bufOut);
+            printWriter = new PrintWriter(getOutputStreamBuffer());
 
         return printWriter;
     }
