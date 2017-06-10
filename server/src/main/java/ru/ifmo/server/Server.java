@@ -99,8 +99,8 @@ public class Server implements Closeable {
     private void openConnection() throws IOException {
         socket = new ServerSocket(config.getPort());
     }
-    private void startProcessor() {Executors.newCachedThreadPool(new ServerThreadFactory
-            ("exec-pharser"));}
+    private void startProcessor() {sockProcessorPool = Executors.newCachedThreadPool(new ServerThreadFactory
+            ("exec-handler"));}
     private void startAcceptor() {
         acceptorPool = Executors.newSingleThreadExecutor(new ServerThreadFactory("con-acceptor"));
       //  sockProcessorPool = Executors.newCachedThreadPool(new ServerThreadFactory("exec-handler"));
