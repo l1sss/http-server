@@ -22,11 +22,11 @@ import static ru.ifmo.server.util.Utils.htmlMessage;
 /**
  * Ifmo Web Server.
  * <p>
- *     To start server use {@link #start(ServerConfig)} and register at least
- *     one handler to process HTTP requests.
- *     Usage example:
- *     <pre>
- *{@code
+ * To start server use {@link #start(ServerConfig)} and register at least
+ * one handler to process HTTP requests.
+ * Usage example:
+ * <pre>
+ * {@code
  * ServerConfig config = new ServerConfig()
  *      .addHandler("/index", new Handler() {
  *          public void handle(Request request, Response response) throws Exception {
@@ -41,8 +41,9 @@ import static ru.ifmo.server.util.Utils.htmlMessage;
  *     </pre>
  * </p>
  * <p>
- *     To stop the server use {@link #stop()} or {@link #close()} methods.
+ * To stop the server use {@link #stop()} or {@link #close()} methods.
  * </p>
+ *
  * @see ServerConfig
  */
 public class Server implements Closeable {
@@ -102,8 +103,7 @@ public class Server implements Closeable {
 
             LOG.info("Server started on port: {}", config.getPort());
             return server;
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             throw new ServerException("Cannot start server on port: " + config.getPort());
         }
     }
@@ -143,8 +143,7 @@ public class Server implements Closeable {
 
             if (LOG.isDebugEnabled())
                 LOG.debug("Parsed request: {}", req);
-        }
-        catch (URISyntaxException e) {
+        } catch (URISyntaxException e) {
             if (LOG.isDebugEnabled())
                 LOG.error("Malformed URL", e);
 
@@ -152,8 +151,7 @@ public class Server implements Closeable {
                     sock.getOutputStream());
 
             return;
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             LOG.error("Error parsing request", e);
 
             respond(SC_SERVER_ERROR, "Server Error", htmlMessage(SC_SERVER_ERROR + " Server error"),
@@ -175,8 +173,7 @@ public class Server implements Closeable {
         if (handler != null) {
             try {
                 handler.handle(req, resp);
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 if (LOG.isDebugEnabled())
                     LOG.error("Server error:", e);
 
@@ -185,8 +182,7 @@ public class Server implements Closeable {
             }
 
             responseToClient(req, resp, sock.getOutputStream());
-        }
-        else
+        } else
             respond(SC_NOT_FOUND, "Not Found", htmlMessage(SC_NOT_FOUND + " Not found"),
                     sock.getOutputStream());
     }
@@ -296,8 +292,7 @@ public class Server implements Closeable {
                     key = query.substring(start, i);
 
                     start = i + 1;
-                }
-                else if (key != null && (query.charAt(i) == AMP || last)) {
+                } else if (key != null && (query.charAt(i) == AMP || last)) {
                     value = query.substring(start, last ? i + 1 : i);
                     if (value.equals("")) value = null;
                     req.addArgument(key, value);
@@ -334,7 +329,7 @@ public class Server implements Closeable {
             String[] pairs = sb.substring(start, len).trim().split(PAIRS_SEPARATOR);
             for (int i = 0; i < pairs.length; i++) {
                 String pair = pairs[i];
-        String[] keyValue = pair.split("=");
+                String[] keyValue = pair.split("=");
                 req.insertCookie(keyValue[0], keyValue[1]);
             }
         }
@@ -433,8 +428,7 @@ public class Server implements Closeable {
                     sock.setSoTimeout(config.getSocketTimeout());
 
                     processConnection(sock);
-                }
-                catch (Exception e) {
+                } catch (Exception e) {
                     if (!Thread.currentThread().isInterrupted())
                         LOG.error("Error accepting connection", e);
                 }
@@ -449,8 +443,13 @@ public class Server implements Closeable {
                 try {
                     for (Map.Entry<String, Session> pair : sessions.entrySet()) {
                         LocalDateTime currentTime = LocalDateTime.now();
+
                         Thread.sleep(1000);
-                        if (pair.getValue().expire != null && currentTime.isAfter(pair.getValue().expire)) {
+
+                        if (pair.getValue().expired)
+                            removeSession(pair.getKey());
+
+                        else if (pair.getValue().expire != null && currentTime.isAfter(pair.getValue().expire)) {
                             pair.getValue().expired = true;
                             removeSession(pair.getKey());
                         }

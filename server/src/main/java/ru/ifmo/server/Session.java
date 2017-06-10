@@ -12,7 +12,7 @@ public class Session {
 
     final String SESSION_ID_SYMBOLS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     final int SESSION_ID_LENGTH = 32;
-    final int SESSION_LIFETIME = 5; // secs 1800;
+    final int SESSION_LIFETIME = 10; // secs 1800;
 
     String id;
     LocalDateTime expire;
@@ -65,5 +65,9 @@ public class Session {
         }
 
         return sb.toString();
+    }
+
+    public void invalidate() {
+        expired = true;
     }
 }
