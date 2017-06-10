@@ -70,6 +70,10 @@ public class Server implements Closeable {
         this.config = new ServerConfig(config);
     }
 
+    public Map<String, Session> getSessions() {
+        return sessions;
+    }
+
     public void removeSession(String id) {
         sessions.remove(id);
     }
