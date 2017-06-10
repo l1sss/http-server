@@ -57,7 +57,7 @@ public class Server implements Closeable {
 
     private ServerSocket socket;
 
-    private ExecutorService poolSock;
+    private ExecutorService sockProcessorPool;
 
     private ExecutorService acceptorPool;
 
@@ -87,6 +87,7 @@ public class Server implements Closeable {
             Server server = new Server(config);
 
             server.openConnection();
+            server.startProcessor();
             server.startAcceptor();
 
             LOG.info("Server started on port: {}", config.getPort());
@@ -100,12 +101,13 @@ public class Server implements Closeable {
     private void openConnection() throws IOException {
         socket = new ServerSocket(config.getPort());
     }
-
+    private void startProcessor() {sockProcessorPool =Executors.newCachedThreadPool(new ServerThreadFactory
+            ("exec-pharser"));}
     private void startAcceptor() {
         acceptorPool = Executors.newSingleThreadExecutor(new ServerThreadFactory("con-acceptor"));
+      //  sockProcessorPool = Executors.newCachedThreadPool(new ServerThreadFactory("exec-handler"));
 
         acceptorPool.submit(new ConnectionHandler());
-        poolSock = Executors.newCachedThreadPool();
 
     }
 
@@ -114,7 +116,7 @@ public class Server implements Closeable {
      */
     public void stop() {
         acceptorPool.shutdownNow();
-        poolSock.shutdownNow();
+        sockProcessorPool.shutdownNow();
         Utils.closeQuiet(socket);
 
         socket = null;
@@ -314,34 +316,34 @@ public class Server implements Closeable {
         public void run() {
 
 
-            while (!Thread.currentThread().isInterrupted()) {
-                try (Socket sock = socket.accept()) {
-                    sock.setSoTimeout(config.getSocketTimeout());
-
-                    // incapsulate multithread sock execution
+            while (!Thread.currentThread().isInterrupted()) try (Socket sock = socket.accept()) {
+                sock.setSoTimeout(config.getSocketTimeout());
 
 
-                 //processConnection(sock);
+                //processConnection(sock);
+// incapsulate multithread sock execution
+                sockProcessorPool.execute(() -> {
+                    try {
 
-                    poolSock.execute(new Runnable() {
-                        @Override
-                        public void run() {
-                            try {
+                        processConnection(sock);
+                    } catch (IOException e) {
+                        e.printStackTrace();
 
-                                processConnection(sock);
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                                poolSock.shutdownNow();
-                            }
-                        }
-                    }) ;
+                    }
+                });
 
+            } catch (Exception e) {
+                if (!Thread.currentThread().isInterrupted())
+                    LOG.error("Error accepting connection", e);
+            }
+
+            finally {
+                try {
+                    socket.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
-                catch (Exception e) {
-                    if (!Thread.currentThread().isInterrupted())
-                        LOG.error("Error accepting connection", e);
-                }
+            }
             }
         }
     }
-}
