@@ -37,4 +37,24 @@ public final class TestUtils {
         assertEquals("Wrong status code received", expected, response.getStatusLine().getStatusCode());
     }
 
+
+    public static class HeaderFilter extends Filter {
+
+        String name = null;
+        int x = 1;
+
+        public HeaderFilter(String name, int x) {
+            this.name = name;
+            this.x = x;
+        }
+
+        @Override
+        public void doFilter(Request request, Response response) throws Exception {
+
+            request.addHeader(name, String.valueOf(x));
+
+            nextFilter.doFilter(request, response);
+
+        }
+    }
 }

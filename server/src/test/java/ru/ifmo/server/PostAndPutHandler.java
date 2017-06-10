@@ -1,6 +1,5 @@
 package ru.ifmo.server;
 
-import static ru.ifmo.server.Http.OK_HEADER;
 import static ru.ifmo.server.SuccessHandler.CLOSE_HTML;
 import static ru.ifmo.server.SuccessHandler.TEST_RESPONSE;
 
@@ -10,11 +9,10 @@ import static ru.ifmo.server.SuccessHandler.TEST_RESPONSE;
 public class PostAndPutHandler implements Handler {
     @Override
     public void handle(Request request, Response response) throws Exception {
-        response.getOutputStream().write((OK_HEADER + TEST_RESPONSE +
+        response.getWriter().write((TEST_RESPONSE +
                 "<br>Arguments: " + request.getArguments() +
                 "<br>Content type: " + request.getBody().getContentType() +
                 "<br>Content length: " + request.getBody().getContentLength() +
-                "<br>Text content: " + request.getBody().getTxtContent() + CLOSE_HTML).getBytes());
-        response.getOutputStream().flush();
+                "<br>Text content: " + request.getBody().getTxtContent() + CLOSE_HTML));
     }
 }

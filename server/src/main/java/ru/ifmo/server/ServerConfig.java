@@ -15,12 +15,17 @@ import java.util.concurrent.ThreadFactory;
 
 public class ServerConfig {
     ExecutorService handlerReflectParam;
-    /** Default local port. */
+    /**
+     * Default local port.
+     */
     public static final int DFLT_PORT = 8080;
 
     private int port = DFLT_PORT;
     private Map<String, Handler> handlers;
     private int socketTimeout;
+    Filter[] filters;
+    Filter firstFilter;
+
 
     public ServerConfig() {
         handlers = new HashMap<>();
@@ -32,7 +37,9 @@ public class ServerConfig {
         port = config.port;
         handlers = new HashMap<>(config.handlers);
         socketTimeout = config.socketTimeout;
+        firstFilter = config.firstFilter;
     }
+
 
     /**
      * @return Local port.
@@ -56,7 +63,7 @@ public class ServerConfig {
     /**
      * Add handler mapping.
      *
-     * @param path Path which will be associated with this handler.
+     * @param path    Path which will be associated with this handler.
      * @param handler Request handler.
      * @return Itself for chaining.
      */
@@ -136,6 +143,13 @@ private class clazz  {
      */
     public ServerConfig setSocketTimeout(int socketTimeout) {
         this.socketTimeout = socketTimeout;
+
+        return this;
+    }
+
+
+    public ServerConfig setFilters(Filter... filters) {
+        this.filters = filters;
 
         return this;
     }
