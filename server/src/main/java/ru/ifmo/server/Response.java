@@ -94,7 +94,7 @@ public class Response {
 
     public PrintWriter getWriter() {
         if (printWriter == null)
-            printWriter = new PrintWriter(bufOut);
+            printWriter = new PrintWriter(getOutputStreamBuffer());
 
         return printWriter;
     }
