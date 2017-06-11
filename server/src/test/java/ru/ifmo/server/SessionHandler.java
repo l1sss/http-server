@@ -1,6 +1,5 @@
 package ru.ifmo.server;
 
-import static ru.ifmo.server.Http.OK_HEADER;
 import static ru.ifmo.server.SuccessHandler.CLOSE_HTML;
 import static ru.ifmo.server.SuccessHandler.TEST_RESPONSE;
 

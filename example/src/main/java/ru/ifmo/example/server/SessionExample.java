@@ -5,7 +5,7 @@ import ru.ifmo.server.*;
 import java.io.PrintWriter;
 
 /**
- * Simple hello world example.
+ * Simple session example.
  */
 public class SessionExample {
     public static void main(String[] args) {

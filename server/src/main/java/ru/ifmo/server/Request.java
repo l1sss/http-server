@@ -138,7 +138,6 @@ public class Request {
     }
 
     /**
-     *
      * @return if contains session id returns true
      */
     private boolean containsSIDCookie() {

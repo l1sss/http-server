@@ -24,8 +24,8 @@ public class Response {
 
     //GETTER and SETTER//
 
-    public void setStatusCode (int code) {
-        if ((code < 100) || (code > 599)){
+    public void setStatusCode(int code) {
+        if ((code < 100) || (code > 599)) {
             throw new ServerException("Not valid http status code: " + code);
         }
         statusCode = code;
@@ -63,7 +63,7 @@ public class Response {
         headers.put("Content-Length", String.valueOf(length));
     }
 
-    public String getContentLength(){
+    public String getContentLength() {
         return headers.get(CONTENT_LENGTH);
     }
 
