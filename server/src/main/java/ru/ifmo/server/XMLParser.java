@@ -1,12 +1,14 @@
 package ru.ifmo.server;
 
+import ru.ifmo.server.util.Utils;
+
 import javax.xml.namespace.QName;
-import javax.xml.stream.*;
+import javax.xml.stream.XMLEventReader;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamConstants;
+import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.events.*;
-import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Created by Тарас on 03.06.2017.
@@ -41,7 +43,7 @@ public class XMLParser extends AbstractParser {
                         addHandler(attUrl.getValue(), attClass.getValue());
 
                     else if ("filter".equals(tagStart) && attClass != null){
-                        setFilters(attClass.getValue()); //жду фильтра
+                        setFilters(attClass.getValue());
                     }
                 }
                 else if (event.getEventType() == XMLStreamConstants.CHARACTERS){
@@ -63,8 +65,12 @@ public class XMLParser extends AbstractParser {
             return config;
         }
         finally {
-            in.close();
-            reader.close();
+            try {
+                if (reader != null)
+                    reader.close();
+            } finally {
+                Utils.closeQuiet(in);
+            }
         }
     }
 }

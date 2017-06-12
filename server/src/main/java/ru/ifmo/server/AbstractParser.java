@@ -1,8 +1,10 @@
 package ru.ifmo.server;
 
 import java.io.InputStream;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Created by Тарас on 03.06.2017.
  */
@@ -10,14 +12,28 @@ public abstract class AbstractParser implements Parser {
 
     protected ServerConfig config;
     protected InputStream in;
+    private Map<Class<? extends Handler>, Handler> handlers;
 
     public AbstractParser(InputStream in) {
         this.in = in;
         config = new ServerConfig();
+        handlers = new HashMap<>();
     }
 
+    @SuppressWarnings("unchecked")
     protected void addHandler(String url, String className) throws ReflectiveOperationException {
-        config.addHandler(url, (Handler) Class.forName(className).newInstance());
+        Class<Handler> handlerClass = (Class<Handler>) Class.forName(className);
+
+        Handler handler;
+        if (!handlers.containsKey(handlerClass)) {
+            handler = handlerClass.getConstructor().newInstance();
+
+            handlers.put(handlerClass, handler);
+        }
+        else
+            handler = handlers.get(handlerClass);
+
+        config.addHandler(url, handler);
     }
 
     protected void setFilters(String className) throws Exception {
@@ -57,8 +73,12 @@ public abstract class AbstractParser implements Parser {
         else if (paramType == float.class || paramType == Float.class)
             return Float.valueOf(value);
 
-        else if (paramType == char.class)
+        else if (paramType == char.class) {
+            if (value.length() != 1)
+                throw new ServerException("Illegal argument: char. Must be single character.");
+
             return value.charAt(0);
+        }
 
         else if (paramType == String.class)
             return value;

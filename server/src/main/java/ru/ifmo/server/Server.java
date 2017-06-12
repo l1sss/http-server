@@ -69,7 +69,7 @@ public class Server implements Closeable {
     }
 
     public static Server start(String configPath) throws ServerException {
-        return start(new Loader().load(configPath));
+        return start(new ConfigLoader().load(configPath));
     }
 
     /**

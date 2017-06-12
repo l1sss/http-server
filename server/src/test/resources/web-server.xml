@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<http-server>
+    <port>8888</port>
+    <handlers>
+        <handler url="/info.html" class="ru.ifmo.server.FailHandler"/>
+        <handler url="/info" class="ru.ifmo.server.FailHandler"/>
+    </handlers>
+    <filters>
+        <filter class="ru.ifmo.server.FakeFilter"/>
+        <filter class="ru.ifmo.server.FakeFilter"/>
+    </filters>
+    <socketTimeout>5</socketTimeout>
+</http-server>

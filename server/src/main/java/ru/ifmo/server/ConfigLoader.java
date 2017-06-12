@@ -1,13 +1,12 @@
 package ru.ifmo.server;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 
 /**
  * Created by Тарас on 06.06.2017.
  */
-public class Loader {
+public class ConfigLoader {
 
     private static final String PROPERTIES_FILE_NAME = "web-server.properties";
     private static final String XML_FILE_NAME = "web-server.xml";
@@ -17,7 +16,7 @@ public class Loader {
             InputStream in;
             ConfigType type;
 
-            if (path != null){
+            if (path != null) {
                 in = new FileInputStream(path);
 
                 if (path.endsWith(".xml"))
@@ -29,13 +28,13 @@ public class Loader {
                 else throw new ServerException("Unsupported file format: " + path + ". Supported xml or properties");
             }
             else {
-                in = Server.class.getClassLoader().getResourceAsStream(PROPERTIES_FILE_NAME);//ищет файл
+                in = Server.class.getClassLoader().getResourceAsStream(PROPERTIES_FILE_NAME);
 
                 if (in != null) {
                     type = ConfigType.PROPERTIES;
                 }
                 else {
-                    in = Server.class.getClassLoader().getResourceAsStream(XML_FILE_NAME);//ищет файл
+                    in = Server.class.getClassLoader().getResourceAsStream(XML_FILE_NAME);
 
                     if (in != null) {
                         type = ConfigType.XML;

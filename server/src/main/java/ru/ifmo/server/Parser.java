@@ -5,5 +5,4 @@ package ru.ifmo.server;
  */
 public interface Parser {
     ServerConfig parse() throws Exception;
-
 }

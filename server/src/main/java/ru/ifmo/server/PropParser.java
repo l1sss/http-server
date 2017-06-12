@@ -1,10 +1,7 @@
 package ru.ifmo.server;
 
-import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.Properties;
-
-//import static ru.ifmo.server.MyParse.*;
 
 /**
  * Created by Тарас on 03.06.2017.
