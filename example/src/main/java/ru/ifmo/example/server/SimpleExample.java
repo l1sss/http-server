@@ -1,4 +1,3 @@
-/*
 package ru.ifmo.example.server;
 
 import ru.ifmo.server.*;
@@ -9,18 +8,16 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Map;
 
-*/
 /**
  * Simple example that shows basic usage.
- *//*
-
+ */
 public class SimpleExample {
     public static void main(String[] args) throws URISyntaxException, IOException {
         Handler printHandler = new InfoHandler();
 
         // Define config with request handlers
         ServerConfig config = new ServerConfig()
-                .addHandler("/info.html", InfoHandler.class)
+                .addHandler("/info.html", printHandler)
                 .addHandler("/info", printHandler);
 
         // Start server
@@ -91,4 +88,3 @@ public class SimpleExample {
         }
     }
 }
-*/

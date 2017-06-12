@@ -35,8 +35,12 @@ public class ServerTest {
     private static final String SESSION_URL = "/test_session";
     private static final String OPTIONS_URL = "/test_options";
     private static final String DELETE_URL = "/test_delete";
+<<<<<<< HEAD
     private static final String FILTER_URL = "/test_filter";
     private static int cnt = 0;
+=======
+    private static final String SESSION_URL = "/test_session";
+>>>>>>> parent of 4ce1950... Session & Cookies
 
     private static Server server;
     private static CloseableHttpClient client;
@@ -49,15 +53,7 @@ public class ServerTest {
                 .addHandler(POST_AND_PUT_URL, new PostAndPutHandler())
                 .addHandler(OPTIONS_URL, new OptionsHandler())
                 .addHandler(DELETE_URL, new SuccessHandler())
-                .addHandler(SESSION_URL, new SessionHandler())
-                .addHandler(SERVER_ERROR_URL, new FailHandler())
-                .addHandler(FILTER_URL, new FilterHandler());
-
-        Filter filter1 = new TestUtils.HeaderFilter("filter1", ++cnt);
-        Filter filter2 = new TestUtils.HeaderFilter("filter2", ++cnt);
-        Filter filter3 = new TestUtils.HeaderFilter("filter3", ++cnt);
-
-        cfg.setFilters(filter1, filter2, filter3);
+                .addHandler(SESSION_URL, new SessionHandler());
 
         server = Server.start(cfg);
         client = HttpClients.createDefault();
