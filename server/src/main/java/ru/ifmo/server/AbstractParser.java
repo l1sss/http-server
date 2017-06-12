@@ -37,7 +37,7 @@ public abstract class AbstractParser implements Parser {
     }
 
     protected void setFilters(String className) throws Exception {
-        //config.setFilters((Filter) Class.forName(className).newInstance());
+        config.setFilters((Filter[]) Class.forName(className).newInstance());
     }
 
     protected void reflectiveSet(String key, String value) throws ReflectiveOperationException {
