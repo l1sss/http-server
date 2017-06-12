@@ -17,7 +17,7 @@ public class SimpleExample {
 
         // Define config with request handlers
         ServerConfig config = new ServerConfig()
-                .addHandler("/info.html", printHandler)
+                .addHandler("/info.html", InfoHandler.class)
                 .addHandler("/info", printHandler);
 
         // Start server
