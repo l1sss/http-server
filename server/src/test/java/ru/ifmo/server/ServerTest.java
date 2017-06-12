@@ -97,6 +97,15 @@ public class ServerTest {
     }
 
     @Test
+    public void testDelete() throws Exception {
+        HttpDelete delete = new HttpDelete(DELETE_URL);
+
+        CloseableHttpResponse response = client.execute(host, delete);
+
+        assertStatusCode(HttpStatus.SC_OK, response);
+    }
+
+    @Test
     public void testOptions() throws Exception {
         HttpOptions options = new HttpOptions(OPTIONS_URL);
 
@@ -270,14 +279,11 @@ public class ServerTest {
     }
 
     @Test
-    public void testSessions() throws Exception {
+    public void testSession() throws Exception {
         HttpGet get = new HttpGet(SESSION_URL);
 
         CloseableHttpResponse response = client.execute(host, get);
-
-        HttpGet get2 = new HttpGet(SESSION_URL);
-
-        CloseableHttpResponse response2 = client.execute(host, get2);
+        CloseableHttpResponse response2 = client.execute(host, get);
 
         assertStatusCode(HttpStatus.SC_OK, response);
         assertStatusCode(HttpStatus.SC_OK, response2);
