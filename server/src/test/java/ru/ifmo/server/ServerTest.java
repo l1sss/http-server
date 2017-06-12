@@ -35,11 +35,8 @@ public class ServerTest {
     private static final String OPTIONS_URL = "/test_options";
     private static final String DELETE_URL = "/test_delete";
     private static final String SESSION_URL = "/test_session";
-<<<<<<< HEAD
     private static final String FILTER_URL = "/test_filter";
     private static int cnt = 0;
-=======
->>>>>>> parent of 4ce1950... Session & Cookies
 
     private static Server server;
     private static CloseableHttpClient client;
