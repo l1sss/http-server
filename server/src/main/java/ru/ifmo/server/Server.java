@@ -1,5 +1,7 @@
 package ru.ifmo.server;
 
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.ifmo.server.util.Utils;
@@ -10,7 +12,6 @@ import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.LocalDateTime;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -65,9 +66,22 @@ public class Server implements Closeable {
 
     private ServerSocket socket;
 
+    private ExecutorService sockProcessorPool;
+
     private ExecutorService acceptorPool;
 
     private Server(ServerConfig config) {
+        if (config.filters == null || config.filters.length == 0)
+            config.firstFilter = new TailFilter();
+        else {
+            config.firstFilter = config.filters[0];
+
+            for (int i = 1; i < config.filters.length; i++)
+                config.filters[i - 1].setNextFilter(config.filters[i]);
+
+            config.filters[config.filters.length - 1].setNextFilter(new TailFilter());
+        }
+
         this.config = new ServerConfig(config);
     }
 
@@ -98,7 +112,7 @@ public class Server implements Closeable {
             Server server = new Server(config);
 
             server.openConnection();
-            server.startAcceptor();
+            server.startPools();
             server.startInvalidator();
 
             LOG.info("Server started on port: {}", config.getPort());
@@ -112,10 +126,11 @@ public class Server implements Closeable {
         socket = new ServerSocket(config.getPort());
     }
 
-    private void startAcceptor() {
+    private void startPools() {
         acceptorPool = Executors.newSingleThreadExecutor(new ServerThreadFactory("con-acceptor"));
+        sockProcessorPool = Executors.newCachedThreadPool(new ServerThreadFactory("exec-handler"));
 
-        acceptorPool.submit(new ConnectionHandler());
+        acceptorPool.execute(new ConnectionHandler());
     }
 
     private void startInvalidator() {
@@ -127,6 +142,7 @@ public class Server implements Closeable {
      */
     public void stop() {
         acceptorPool.shutdownNow();
+        sockProcessorPool.shutdownNow();
         Utils.closeQuiet(socket);
 
         socket = null;
@@ -136,13 +152,13 @@ public class Server implements Closeable {
         if (LOG.isDebugEnabled())
             LOG.debug("Accepting connection on: {}", sock);
 
-        Request req;
+        Request request;
 
         try {
-            req = parseRequest(sock);
+            request = parseRequest(sock);
 
             if (LOG.isDebugEnabled())
-                LOG.debug("Parsed request: {}", req);
+                LOG.debug("Parsed request: {}", request);
         } catch (URISyntaxException e) {
             if (LOG.isDebugEnabled())
                 LOG.error("Malformed URL", e);
@@ -160,31 +176,28 @@ public class Server implements Closeable {
             return;
         }
 
-        if (!isMethodSupported(req.method)) {
+        if (!isMethodSupported(request.method)) {
             respond(SC_NOT_IMPLEMENTED, "Not Implemented", htmlMessage(SC_NOT_IMPLEMENTED + " Method \""
-                    + req.method + "\" is not supported"), sock.getOutputStream());
+                    + request.method + "\" is not supported"), sock.getOutputStream());
 
             return;
         }
 
-        Handler handler = config.handler(req.getPath());
-        Response resp = new Response();
+        Response response = new Response();
 
-        if (handler != null) {
-            try {
-                handler.handle(req, resp);
-            } catch (Exception e) {
-                if (LOG.isDebugEnabled())
-                    LOG.error("Server error:", e);
+        try {
+            config.firstFilter.doFilter(request, response);
+        } catch (Exception e) {
+            if (LOG.isDebugEnabled())
+                LOG.error("Server error:", e);
 
-                respond(SC_SERVER_ERROR, "Server Error", htmlMessage(SC_SERVER_ERROR + " Server error"),
-                        sock.getOutputStream());
-            }
-
-            responseToClient(req, resp, sock.getOutputStream());
-        } else
-            respond(SC_NOT_FOUND, "Not Found", htmlMessage(SC_NOT_FOUND + " Not found"),
+            respond(SC_SERVER_ERROR, "Server Error", htmlMessage(SC_SERVER_ERROR + " Server error"),
                     sock.getOutputStream());
+
+            return;
+        }
+
+        responseToClient(request, response, sock.getOutputStream());
     }
 
     private void responseToClient(Request request, Response response, OutputStream out) throws IOException {
@@ -421,13 +434,45 @@ public class Server implements Closeable {
         return false;
     }
 
+    public class TailFilter extends Filter {
+
+        @Override
+        public void doFilter(Request req, Response response) throws Exception {
+            Handler handler = config.handler(req.getPath());
+
+            if (handler != null) {
+                handler.handle(req, response);
+            } else {
+                response.printWriter = null;
+                response.bufOut = new ByteArrayOutputStream();
+                response.setStatusCode(SC_NOT_FOUND);
+                response.getWriter().write(htmlMessage(SC_NOT_FOUND + " Not found"));
+            }
+        }
+    }
+
+
     private class ConnectionHandler implements Runnable {
         public void run() {
             while (!Thread.currentThread().isInterrupted()) {
-                try (Socket sock = socket.accept()) {
+                try {
+                    Socket sock = socket.accept();
+
                     sock.setSoTimeout(config.getSocketTimeout());
 
                     processConnection(sock);
+                    //processConnection(sock);
+                    // incapsulate multithread sock execution
+                    sockProcessorPool.execute(() -> {
+                        try {
+                            processConnection(sock);
+                        } catch (IOException e) {
+                            LOG.error("Error processing connection", e);
+                        } finally {
+                            Utils.closeQuiet(sock);
+                        }
+                    });
+
                 } catch (Exception e) {
                     if (!Thread.currentThread().isInterrupted())
                         LOG.error("Error accepting connection", e);

@@ -79,7 +79,7 @@ public class Response {
 
     public void setBody(byte[] data) {
         try {
-            bufOut.write(data);
+            getOutputStreamBuffer().write(data);
         } catch (IOException e) {
             throw new ServerException("Cannot get output stream", e);
         }

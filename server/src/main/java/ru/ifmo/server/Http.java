@@ -3,6 +3,7 @@ package ru.ifmo.server;
 /**
  * HTTP constants.
  */
+
 public class Http {
     public static final int SC_CONTINUE = 100;
     public static final int SC_OK = 200;
