@@ -35,8 +35,11 @@ public class ServerTest {
     private static final String OPTIONS_URL = "/test_options";
     private static final String DELETE_URL = "/test_delete";
     private static final String SESSION_URL = "/test_session";
+<<<<<<< HEAD
     private static final String FILTER_URL = "/test_filter";
     private static int cnt = 0;
+=======
+>>>>>>> parent of 4ce1950... Session & Cookies
 
     private static Server server;
     private static CloseableHttpClient client;
@@ -49,15 +52,7 @@ public class ServerTest {
                 .addHandler(POST_AND_PUT_URL, new PostAndPutHandler())
                 .addHandler(OPTIONS_URL, new OptionsHandler())
                 .addHandler(DELETE_URL, new SuccessHandler())
-                .addHandler(SESSION_URL, new SessionHandler())
-                .addHandler(SERVER_ERROR_URL, new FailHandler())
-                .addHandler(FILTER_URL, new FilterHandler());
-
-        Filter filter1 = new TestUtils.HeaderFilter("filter1", ++cnt);
-        Filter filter2 = new TestUtils.HeaderFilter("filter2", ++cnt);
-        Filter filter3 = new TestUtils.HeaderFilter("filter3", ++cnt);
-
-        cfg.setFilters(filter1, filter2, filter3);
+                .addHandler(SESSION_URL, new SessionHandler());
 
         server = Server.start(cfg);
         client = HttpClients.createDefault();
@@ -274,22 +269,6 @@ public class ServerTest {
                         "<br>Content length: 25" +
                         "<br>Text content: some text in request body" +
                         CLOSE_HTML,
-                EntityUtils.toString(response.getEntity()));
-    }
-
-    @Test
-    public void testFilter() throws Exception {
-        URI uri = new URIBuilder(FILTER_URL).build();
-        HttpRequest request = new HttpGet(uri);
-        request.addHeader("User-Agent", "TestAgent");
-
-        CloseableHttpResponse response = client.execute(host, request);
-
-        assertStatusCode(HttpStatus.SC_OK, response);
-        assertEquals(SuccessHandler.TEST_RESPONSE +
-                        "<br>Headers: {Accept-Encoding=gzip,deflate, Connection=Keep-Alive, " +
-                        "Host=localhost:8080, User-Agent=TestAgent, filter1=1, filter2=2, filter3=3}" +
-                        SuccessHandler.CLOSE_HTML,
                 EntityUtils.toString(response.getEntity()));
     }
 
