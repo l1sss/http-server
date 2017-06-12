@@ -134,7 +134,10 @@ public class Server implements Closeable {
     }
 
     private void startInvalidator() {
-        new Thread(new Invalidator()).start();
+        Thread invalidator = new Thread(new Invalidator());
+        invalidator.setName("invalidator");
+        invalidator.setDaemon(true);
+        invalidator.start();
     }
 
     /**
@@ -460,7 +463,6 @@ public class Server implements Closeable {
 
                     sock.setSoTimeout(config.getSocketTimeout());
 
-                    processConnection(sock);
                     //processConnection(sock);
                     // incapsulate multithread sock execution
                     sockProcessorPool.execute(() -> {
@@ -481,26 +483,20 @@ public class Server implements Closeable {
         }
     }
 
-    class Invalidator implements Runnable {
+    private class Invalidator implements Runnable {
         @Override
         public void run() {
             while (!Thread.currentThread().isInterrupted()) {
-                try {
-                    for (Map.Entry<String, Session> pair : sessions.entrySet()) {
-                        LocalDateTime currentTime = LocalDateTime.now();
+                for (Map.Entry<String, Session> pair : sessions.entrySet()) {
+                    LocalDateTime currentTime = LocalDateTime.now();
 
-                        Thread.sleep(1000);
+                    if (pair.getValue().expired)
+                        removeSession(pair.getKey());
 
-                        if (pair.getValue().expired)
-                            removeSession(pair.getKey());
-
-                        else if (pair.getValue().expire != null && currentTime.isAfter(pair.getValue().expire)) {
-                            pair.getValue().expired = true;
-                            removeSession(pair.getKey());
-                        }
+                    else if (pair.getValue().expire != null && currentTime.isAfter(pair.getValue().expire)) {
+                        pair.getValue().expired = true;
+                        removeSession(pair.getKey());
                     }
-                } catch (InterruptedException e) {
-                    return;
                 }
             }
         }
