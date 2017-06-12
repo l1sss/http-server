@@ -1,8 +1,5 @@
 package ru.ifmo.server;
 
-import java.io.IOException;
-
-
 /**
  * Define your implementations of this abstract class, register and
  * define a set of filters use
@@ -21,7 +18,7 @@ public abstract class Filter {
 
     protected Filter nextFilter;
 
-    public abstract void doFilter(Request request, Response response) throws IOException;
+    public abstract void doFilter(Request request, Response response) throws Exception;
 
     public void setNextFilter(Filter nextFilter) {
         this.nextFilter = nextFilter;
