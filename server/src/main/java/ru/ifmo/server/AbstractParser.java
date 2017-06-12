@@ -3,6 +3,7 @@ package ru.ifmo.server;
 import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 
 /**
@@ -13,11 +14,13 @@ public abstract class AbstractParser implements Parser {
     protected ServerConfig config;
     protected InputStream in;
     private Map<Class<? extends Handler>, Handler> handlers;
+    private HashSet<String> filters;
 
     public AbstractParser(InputStream in) {
         this.in = in;
         config = new ServerConfig();
         handlers = new HashMap<>();
+        filters = new HashSet<>();
     }
 
     @SuppressWarnings("unchecked")
@@ -37,7 +40,12 @@ public abstract class AbstractParser implements Parser {
     }
 
     protected void setFilters(String className) throws Exception {
-        config.setFilters((Filter[]) Class.forName(className).newInstance());
+
+        if (!filters.contains(className)){
+            config.setFilters((Filter) Class.forName(className).getConstructor().newInstance());
+
+            filters.add(className);
+        }
     }
 
     protected void reflectiveSet(String key, String value) throws ReflectiveOperationException {
