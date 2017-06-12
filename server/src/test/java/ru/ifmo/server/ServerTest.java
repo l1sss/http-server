@@ -32,15 +32,11 @@ public class ServerTest {
     private static final String NOT_FOUND_URL = "/test_not_found";
     private static final String SERVER_ERROR_URL = "/test_fail";
     private static final String POST_AND_PUT_URL = "/test_post_and_put";
-    private static final String SESSION_URL = "/test_session";
     private static final String OPTIONS_URL = "/test_options";
     private static final String DELETE_URL = "/test_delete";
-<<<<<<< HEAD
+    private static final String SESSION_URL = "/test_session";
     private static final String FILTER_URL = "/test_filter";
     private static int cnt = 0;
-=======
-    private static final String SESSION_URL = "/test_session";
->>>>>>> parent of 4ce1950... Session & Cookies
 
     private static Server server;
     private static CloseableHttpClient client;
@@ -53,7 +49,15 @@ public class ServerTest {
                 .addHandler(POST_AND_PUT_URL, new PostAndPutHandler())
                 .addHandler(OPTIONS_URL, new OptionsHandler())
                 .addHandler(DELETE_URL, new SuccessHandler())
-                .addHandler(SESSION_URL, new SessionHandler());
+                .addHandler(SESSION_URL, new SessionHandler())
+                .addHandler(SERVER_ERROR_URL, new FailHandler())
+                .addHandler(FILTER_URL, new FilterHandler());
+
+        Filter filter1 = new TestUtils.HeaderFilter("filter1", ++cnt);
+        Filter filter2 = new TestUtils.HeaderFilter("filter2", ++cnt);
+        Filter filter3 = new TestUtils.HeaderFilter("filter3", ++cnt);
+
+        cfg.setFilters(filter1, filter2, filter3);
 
         server = Server.start(cfg);
         client = HttpClients.createDefault();
@@ -111,15 +115,6 @@ public class ServerTest {
                         "<br>Access-Control-Allow-Methods: [GET, POST, PUT, DELETE, HEAD, OPTIONS]" +
                         CLOSE_HTML,
                 EntityUtils.toString(response.getEntity()));
-    }
-
-    @Test
-    public void testDelete() throws Exception {
-        HttpDelete delete = new HttpDelete(DELETE_URL);
-
-        CloseableHttpResponse response = client.execute(host, delete);
-
-        assertStatusCode(HttpStatus.SC_OK, response);
     }
 
     @Test
@@ -182,7 +177,7 @@ public class ServerTest {
     public void testPostWithTextContentAndSomeArguments() throws Exception {
         URI uri = new URIBuilder(POST_AND_PUT_URL)
                 .addParameter("test1", "noMore")
-                .addParameter("test2", "")
+                .addParameter("test2", "") //!!!
                 .addParameter("test3", "soBoring")
                 .build();
 
@@ -283,31 +278,6 @@ public class ServerTest {
     }
 
     @Test
-    public void testSessions() throws Exception {
-        HttpGet get = new HttpGet(SESSION_URL);
-
-        CloseableHttpResponse response = client.execute(host, get);
-
-        HttpGet get2 = new HttpGet(SESSION_URL);
-
-        CloseableHttpResponse response2 = client.execute(host, get2);
-
-        assertStatusCode(HttpStatus.SC_OK, response);
-        assertStatusCode(HttpStatus.SC_OK, response2);
-        assertEquals(1, server.getSessions().size());
-    }
-
-    @Test
-    public void testServerError() throws Exception {
-        HttpGet get = new HttpGet(SERVER_ERROR_URL);
-
-        CloseableHttpResponse response = client.execute(host, get);
-
-        assertStatusCode(HttpStatus.SC_INTERNAL_SERVER_ERROR, response);
-        assertNotNull(EntityUtils.toString(response.getEntity()));
-    }
-
-    @Test
     public void testFilter() throws Exception {
         URI uri = new URIBuilder(FILTER_URL).build();
         HttpRequest request = new HttpGet(uri);
@@ -324,12 +294,37 @@ public class ServerTest {
     }
 
     @Test
+    public void testSessions() throws Exception {
+        HttpGet get = new HttpGet(SESSION_URL);
+
+        CloseableHttpResponse response = client.execute(host, get);
+
+        HttpGet get2 = new HttpGet(SESSION_URL);
+
+        CloseableHttpResponse response2 = client.execute(host, get2);
+
+        assertStatusCode(HttpStatus.SC_OK, response);
+        assertStatusCode(HttpStatus.SC_OK, response2);
+        assertEquals(1, server.getSessions().size());
+    }
+
+    @Test
     public void testNotFound() throws Exception {
         HttpGet get = new HttpGet(NOT_FOUND_URL);
 
         CloseableHttpResponse response = client.execute(host, get);
 
         assertStatusCode(HttpStatus.SC_NOT_FOUND, response);
+        assertNotNull(EntityUtils.toString(response.getEntity()));
+    }
+
+    @Test
+    public void testServerError() throws Exception {
+        HttpGet get = new HttpGet(SERVER_ERROR_URL);
+
+        CloseableHttpResponse response = client.execute(host, get);
+
+        assertStatusCode(HttpStatus.SC_INTERNAL_SERVER_ERROR, response);
         assertNotNull(EntityUtils.toString(response.getEntity()));
     }
 
