@@ -164,8 +164,6 @@ public class Server implements Closeable {
                 sock.getOutputStream().write(("HTTP/1.0 301 OK " + CRLF + "status: Permanently moved" + CRLF + "Location: "
                         + resp.location + CRLF + CRLF).getBytes());
                 writer.flush();
-            }
-            if (resp.resource != null) {
 
 
             }

@@ -10,8 +10,7 @@ import java.net.Socket;
  */
 public class Response {
     final Socket socket;
-    public String location=null;
-    public String resource;
+    public String location;
 
 
     Response(Socket socket) {
@@ -38,14 +37,9 @@ public class Response {
         this.location = location;
 
 
-
     }
 
 
-    protected void Forward(String resource) throws IOException {
-        this.resource = resource;
-    }
-
-    }
+}
 
 

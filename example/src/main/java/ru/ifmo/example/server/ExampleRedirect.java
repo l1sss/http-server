@@ -11,7 +11,7 @@ public class ExampleRedirect {
                 .addHandler("/index", new Handler() {
                     @Override
                     public void handle(Request request, Response response) throws Exception {
-                        response.Redirect("http://wroom.ru");
+                        response.Redirect("http://google.ru");
                     }
                 });
         config.setPort(8088);
