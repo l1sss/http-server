@@ -5,5 +5,5 @@ package ru.ifmo.server;
  */
 public interface Dispatcher{
 
-    String dispatch(Request request, Response response) throws Exception;
+    String dispatch(Request request, Response response);
 }

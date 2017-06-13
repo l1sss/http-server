@@ -4,7 +4,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpStatus;
-import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.*;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -16,8 +15,9 @@ import org.junit.Test;
 
 import java.net.URI;
 
-import static org.junit.Assert.*;
-import static ru.ifmo.server.TestUtils.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static ru.ifmo.server.TestUtils.assertStatusCode;
 
 /**
  * Tests main server functionality.
@@ -122,6 +122,34 @@ public class ServerTest {
         CloseableHttpResponse response = client.execute(host, request);
 
         assertStatusCode(HttpStatus.SC_NOT_IMPLEMENTED, response);
+    }
+
+    @Test
+    public void testDispatcher() throws Exception {
+        HttpGet get = new HttpGet(DispatcherTest.FOR_DISPATCH_URL);
+
+        CloseableHttpResponse response = client.execute(host, get);
+        String responseBody = EntityUtils.toString(response.getEntity());
+
+        assertEquals("Path not dispatched", responseBody.contains("Test dispatch"), true);
+    }
+
+    @Test
+    public void testStatusCode() throws Exception {
+        HttpGet get = new HttpGet(SUCCESS_URL);
+
+        CloseableHttpResponse response = client.execute(host, get);
+
+        assertStatusCode(HttpStatus.SC_OK, response);
+    }
+
+    @Test
+    public void testPostWithoutContentType() throws Exception {
+        HttpRequest request = new HttpPost(SUCCESS_URL);
+
+        CloseableHttpResponse response = client.execute(host, request);
+
+        assertStatusCode(HttpStatus.SC_BAD_REQUEST, response);
     }
 
     @Test
