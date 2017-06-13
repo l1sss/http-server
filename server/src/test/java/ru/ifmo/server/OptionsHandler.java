@@ -1,7 +1,5 @@
 package ru.ifmo.server;
 
-import java.util.Arrays;
-
 import static ru.ifmo.server.SuccessHandler.CLOSE_HTML;
 import static ru.ifmo.server.SuccessHandler.TEST_RESPONSE;
 
@@ -12,8 +10,7 @@ public class OptionsHandler implements Handler {
     @Override
     public void handle(Request request, Response response) throws Exception {
         response.getWriter().write((TEST_RESPONSE +
-                "<br>Access-Control-Allow-Methods: " +
-                Arrays.toString(HttpMethod.values()) +
+                "<br>Access-Control-Allow-Methods: [GET, POST, PUT, DELETE, HEAD, OPTIONS]" +
                 CLOSE_HTML));
     }
 }

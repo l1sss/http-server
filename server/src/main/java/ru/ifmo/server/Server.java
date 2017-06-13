@@ -428,13 +428,19 @@ public class Server implements Closeable {
     }
 
     private boolean isMethodSupported(HttpMethod method) {
-        for (HttpMethod m : HttpMethod.values()) {
-            if (m == method)
+        switch (method) {
+            case GET:
+            case POST:
+            case PUT:
+            case DELETE:
+            case HEAD:
+            case OPTIONS:
 
                 return true;
-        }
 
-        return false;
+            default:
+                return false;
+        }
     }
 
     public class TailFilter extends Filter {
