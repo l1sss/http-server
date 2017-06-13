@@ -7,24 +7,38 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Created by l1s on 30.05.17.
  */
+
+/**
+ * The class supports sessions between the server and the client
+ */
 public class Session {
     public static final String SESSION_COOKIE_NAME = "SESSIONID";
 
+    /**
+     * Supported character set
+     */
     final String SESSION_ID_SYMBOLS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
     final int SESSION_ID_LENGTH = 32;
 
-    final int SESSION_LIFETIME = 60 * 30; //secs 1800;
+    /**
+     * Session lifetime in seconds
+     */
+    final int SESSION_LIFETIME = 60 * 30;
 
     String id;
     LocalDateTime expire;
-    volatile boolean expired;
     Map<String, Object> sessionData;
+    volatile boolean expired;
 
     public Session() {
         this.id = generateSessionId();
         this.setExpire(SESSION_LIFETIME);
     }
 
+    /**
+     * @return session identificator
+     */
     public String getId() {
         return id;
     }
@@ -33,10 +47,16 @@ public class Session {
         return expire;
     }
 
+    /**
+     * Set the time to which the session is valid
+     */
     public synchronized void setExpire(int seconds) {
         this.expire = LocalDateTime.now().plusSeconds(seconds);
     }
 
+    /**
+     * Set parameter in session data
+     */
     public <T> void setParam(String key, T value) {
         if (!expired) {
             if (sessionData == null) {
@@ -50,15 +70,24 @@ public class Session {
         } else throw new SessionException("Session is expired!");
     }
 
+    /**
+     * @return session data parameter
+     */
     @SuppressWarnings("unchecked")
     public <T> T getParam(String key) {
-        if (sessionData == null)
-            return null;
+        if (!expired) {
+            if (sessionData == null)
+                return null;
 
-        return (T) sessionData.get(key);
+            return (T) sessionData.get(key);
+        } else throw new SessionException("Session is expired!");
     }
 
-    public String generateSessionId() {
+    /**
+     * generate session identificator
+     * @return session identificator
+     */
+    private String generateSessionId() {
         StringBuilder sb = new StringBuilder();
 
         for (int i = 0; i < SESSION_ID_LENGTH; i++) {

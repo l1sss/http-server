@@ -101,6 +101,9 @@ public class Request {
         headers.put(key, value);
     }
 
+    /**
+     * add arguments in parse process
+     */
     void addArgument(String key, String value) {
         if (args == null)
             args = new LinkedHashMap<>();
@@ -118,6 +121,9 @@ public class Request {
         return Collections.unmodifiableMap(args);
     }
 
+    /**
+     * insert cookie in cookies collection
+     */
     void insertCookie(String name, String value) {
         if (cookies == null)
             cookies = new HashMap<>();
@@ -125,6 +131,9 @@ public class Request {
         cookies.put(name, value);
     }
 
+    /**
+     * @return cookies collection
+     */
     public Map<String, String> getCookies() {
         if (cookies == null)
             return Collections.emptyMap();
@@ -132,17 +141,27 @@ public class Request {
         return Collections.unmodifiableMap(cookies);
     }
 
+    /**
+     * initialize sessions from the server
+     */
+    void initSessions(Map<String, Session> sessions) {
+        this.sessions = sessions;
+    }
+
     public String getCookieValue(String key) {
         return cookies.get(key);
     }
 
     /**
-     * @return if contains session id returns true
+     * check session id in the cookies collections
      */
     private boolean containsSIDCookie() {
         return getCookies().containsKey(SESSION_COOKIE_NAME);
     }
 
+    /**
+     * @return session
+     */
     public Session getSession() {
         if (session == null)
             session = getSession(false);
@@ -150,11 +169,7 @@ public class Request {
         return session;
     }
 
-    void initSessions(Map<String, Session> sessions) {
-        this.sessions = sessions;
-    }
-
-    public Session getSession(boolean isNew) {
+    private Session getSession(boolean isNew) {
         if (!containsSIDCookie() || isNew) {
             session = new Session();
             sessions.put(session.getId(), session);

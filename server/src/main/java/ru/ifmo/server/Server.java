@@ -438,7 +438,6 @@ public class Server implements Closeable {
     }
 
     public class TailFilter extends Filter {
-
         @Override
         public void doFilter(Request req, Response response) throws Exception {
             Handler handler = config.handler(req.getPath());
@@ -454,7 +453,6 @@ public class Server implements Closeable {
         }
     }
 
-
     private class ConnectionHandler implements Runnable {
         public void run() {
             while (!Thread.currentThread().isInterrupted()) {
@@ -463,7 +461,7 @@ public class Server implements Closeable {
 
                     sock.setSoTimeout(config.getSocketTimeout());
 
-                    //processConnection(sock);
+                    // processConnection(sock);
                     // incapsulate multithread sock execution
                     sockProcessorPool.execute(() -> {
                         try {
@@ -483,6 +481,9 @@ public class Server implements Closeable {
         }
     }
 
+    /**
+     * Invalidator removes expired sessions
+     */
     private class Invalidator implements Runnable {
         @Override
         public void run() {
@@ -493,7 +494,7 @@ public class Server implements Closeable {
                     if (pair.getValue().expired)
                         removeSession(pair.getKey());
 
-                    else if (pair.getValue().expire != null && currentTime.isAfter(pair.getValue().expire)) {
+                    else if (currentTime.isAfter(pair.getValue().expire)) {
                         pair.getValue().expired = true;
                         removeSession(pair.getKey());
                     }

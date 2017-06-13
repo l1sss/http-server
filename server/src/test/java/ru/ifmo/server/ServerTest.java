@@ -4,9 +4,9 @@ import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpStatus;
-import org.apache.http.client.methods.*;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
@@ -31,12 +31,6 @@ public class ServerTest {
     private static final String SUCCESS_URL = "/test_success";
     private static final String NOT_FOUND_URL = "/test_not_found";
     private static final String SERVER_ERROR_URL = "/test_fail";
-    private static final String POST_AND_PUT_URL = "/test_post_and_put";
-    private static final String OPTIONS_URL = "/test_options";
-    private static final String DELETE_URL = "/test_delete";
-    private static final String SESSION_URL = "/test_session";
-    private static final String FILTER_URL = "/test_filter";
-    private static int cnt = 0;
 
     private static Server server;
     private static CloseableHttpClient client;
@@ -45,11 +39,7 @@ public class ServerTest {
     public static void initialize() {
         ServerConfig cfg = new ServerConfig()
                 .addHandler(SUCCESS_URL, new SuccessHandler())
-                .addHandler(SERVER_ERROR_URL, new FailHandler())
-                .addHandler(POST_AND_PUT_URL, new PostAndPutHandler())
-                .addHandler(OPTIONS_URL, new OptionsHandler())
-                .addHandler(DELETE_URL, new SuccessHandler())
-                .addHandler(SESSION_URL, new SessionHandler());
+                .addHandler(SERVER_ERROR_URL, new FailHandler());
 
         server = Server.start(cfg);
         client = HttpClients.createDefault();
@@ -85,209 +75,6 @@ public class ServerTest {
                         "<br>{1=1, 2=2, testArg1=testValue1, testArg2=2, testArg3=testVal3, testArg4=null}" +
                         CLOSE_HTML,
                 EntityUtils.toString(response.getEntity()));
-    }
-
-    @Test
-    public void testHead() throws Exception {
-        HttpHead head = new HttpHead(SUCCESS_URL);
-
-        CloseableHttpResponse response = client.execute(host, head);
-
-        assertStatusCode(HttpStatus.SC_OK, response);
-    }
-
-    @Test
-    public void testDelete() throws Exception {
-        HttpDelete delete = new HttpDelete(DELETE_URL);
-
-        CloseableHttpResponse response = client.execute(host, delete);
-
-        assertStatusCode(HttpStatus.SC_OK, response);
-    }
-
-    @Test
-    public void testOptions() throws Exception {
-        HttpOptions options = new HttpOptions(OPTIONS_URL);
-
-        CloseableHttpResponse response = client.execute(host, options);
-
-        assertStatusCode(HttpStatus.SC_OK, response);
-        assertEquals(TEST_RESPONSE +
-                        "<br>Access-Control-Allow-Methods: [GET, POST, PUT, DELETE, HEAD, OPTIONS]" +
-                        CLOSE_HTML,
-                EntityUtils.toString(response.getEntity()));
-    }
-
-    @Test
-    public void testPostWithEmptyBody() throws Exception {
-        HttpPost post = new HttpPost(POST_AND_PUT_URL);
-
-        CloseableHttpResponse response = client.execute(host, post);
-
-        assertStatusCode(HttpStatus.SC_OK, response);
-        assertEquals(TEST_RESPONSE +
-                        "<br>Arguments: {}" +
-                        "<br>Content type: null" +
-                        "<br>Content length: 0" +
-                        "<br>Text content: null" +
-                        CLOSE_HTML,
-                EntityUtils.toString(response.getEntity()));
-    }
-
-    @Test
-    public void testPostWithEmptyBodyAndSomeArguments() throws Exception {
-        URI uri = new URIBuilder(POST_AND_PUT_URL)
-                .addParameter("iLoveWriteCode", "true")
-                .addParameter("iLoveWriteTests", "false")
-                .addParameter("noMoreTests", "")
-                .build();
-
-        HttpPost post = new HttpPost(uri);
-
-        CloseableHttpResponse response = client.execute(host, post);
-
-        assertStatusCode(HttpStatus.SC_OK, response);
-        assertEquals(TEST_RESPONSE +
-                        "<br>Arguments: {iLoveWriteCode=true, iLoveWriteTests=false, noMoreTests=null}" +
-                        "<br>Content type: null" +
-                        "<br>Content length: 0" +
-                        "<br>Text content: null" +
-                        CLOSE_HTML,
-                EntityUtils.toString(response.getEntity()));
-    }
-
-    @Test
-    public void testPostWithTextContent() throws Exception {
-        HttpPost post = new HttpPost(POST_AND_PUT_URL);
-        StringEntity entity = new StringEntity("some text in request body");
-        post.setEntity(entity);
-
-        CloseableHttpResponse response = client.execute(host, post);
-
-        assertStatusCode(HttpStatus.SC_OK, response);
-        assertEquals(TEST_RESPONSE +
-                        "<br>Arguments: {}" +
-                        "<br>Content type: text/plain; charset=ISO-8859-1" +
-                        "<br>Content length: 25" +
-                        "<br>Text content: some text in request body" +
-                        CLOSE_HTML,
-                EntityUtils.toString(response.getEntity()));
-    }
-
-    @Test
-    public void testPostWithTextContentAndSomeArguments() throws Exception {
-        URI uri = new URIBuilder(POST_AND_PUT_URL)
-                .addParameter("test1", "noMore")
-                .addParameter("test2", "") //!!!
-                .addParameter("test3", "soBoring")
-                .build();
-
-        HttpPost post = new HttpPost(uri);
-        StringEntity entity = new StringEntity("some text in request body");
-        post.setEntity(entity);
-
-        CloseableHttpResponse response = client.execute(host, post);
-
-        assertStatusCode(HttpStatus.SC_OK, response);
-        assertEquals(TEST_RESPONSE +
-                        "<br>Arguments: {test1=noMore, test2=null, test3=soBoring}" +
-                        "<br>Content type: text/plain; charset=ISO-8859-1" +
-                        "<br>Content length: 25" +
-                        "<br>Text content: some text in request body" +
-                        CLOSE_HTML,
-                EntityUtils.toString(response.getEntity()));
-    }
-
-    @Test
-    public void testPutWithEmptyBody() throws Exception {
-        HttpPut put = new HttpPut(POST_AND_PUT_URL);
-
-        CloseableHttpResponse response = client.execute(host, put);
-
-        assertStatusCode(HttpStatus.SC_OK, response);
-        assertEquals(TEST_RESPONSE +
-                        "<br>Arguments: {}" +
-                        "<br>Content type: null" +
-                        "<br>Content length: 0" +
-                        "<br>Text content: null" +
-                        CLOSE_HTML,
-                EntityUtils.toString(response.getEntity()));
-    }
-
-    @Test
-    public void testPutWithEmptyBodyAndSomeArguments() throws Exception {
-        URI uri = new URIBuilder(POST_AND_PUT_URL)
-                .addParameter("iLoveWriteCode", "true")
-                .addParameter("iLoveWriteTests", "false")
-                .addParameter("noMoreTests", "")
-                .build();
-
-        HttpPut put = new HttpPut(uri);
-
-        CloseableHttpResponse response = client.execute(host, put);
-
-        assertStatusCode(HttpStatus.SC_OK, response);
-        assertEquals(TEST_RESPONSE +
-                        "<br>Arguments: {iLoveWriteCode=true, iLoveWriteTests=false, noMoreTests=null}" +
-                        "<br>Content type: null" +
-                        "<br>Content length: 0" +
-                        "<br>Text content: null" +
-                        CLOSE_HTML,
-                EntityUtils.toString(response.getEntity()));
-    }
-
-    @Test
-    public void testPutWithTextContent() throws Exception {
-        HttpPut put = new HttpPut(POST_AND_PUT_URL);
-        StringEntity entity = new StringEntity("some text in request body");
-        put.setEntity(entity);
-
-        CloseableHttpResponse response = client.execute(host, put);
-
-        assertStatusCode(HttpStatus.SC_OK, response);
-        assertEquals(TEST_RESPONSE +
-                        "<br>Arguments: {}" +
-                        "<br>Content type: text/plain; charset=ISO-8859-1" +
-                        "<br>Content length: 25" +
-                        "<br>Text content: some text in request body" +
-                        CLOSE_HTML,
-                EntityUtils.toString(response.getEntity()));
-    }
-
-    @Test
-    public void testPutWithTextContentAndSomeArguments() throws Exception {
-        URI uri = new URIBuilder(POST_AND_PUT_URL)
-                .addParameter("test1", "noMore")
-                .addParameter("test2", "") //!!!
-                .addParameter("test3", "soBoring")
-                .build();
-
-        HttpPut put = new HttpPut(uri);
-        StringEntity entity = new StringEntity("some text in request body");
-        put.setEntity(entity);
-
-        CloseableHttpResponse response = client.execute(host, put);
-
-        assertStatusCode(HttpStatus.SC_OK, response);
-        assertEquals(TEST_RESPONSE +
-                        "<br>Arguments: {test1=noMore, test2=null, test3=soBoring}" +
-                        "<br>Content type: text/plain; charset=ISO-8859-1" +
-                        "<br>Content length: 25" +
-                        "<br>Text content: some text in request body" +
-                        CLOSE_HTML,
-                EntityUtils.toString(response.getEntity()));
-    }
-
-    @Test
-    public void testSession() throws Exception {
-        HttpGet get = new HttpGet(SESSION_URL);
-
-        CloseableHttpResponse response = client.execute(host, get);
-        CloseableHttpResponse response2 = client.execute(host, get);
-
-        assertStatusCode(HttpStatus.SC_OK, response);
-        assertStatusCode(HttpStatus.SC_OK, response2);
-        assertEquals(1, server.getSessions().size());
     }
 
     @Test
