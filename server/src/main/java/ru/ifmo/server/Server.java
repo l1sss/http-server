@@ -1,4 +1,5 @@
 package ru.ifmo.server;
+import java.nio.file.Files;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -169,6 +170,7 @@ public class Server implements Closeable {
         Response response = new Response();
 
         try {
+            searchPath(response, sock, req.getPath());
             config.firstFilter.doFilter(req, response);
         } catch (Exception e) {
             if (LOG.isDebugEnabled())
@@ -441,4 +443,53 @@ public class Server implements Closeable {
             }
         }
     }
+    private void searchPath(Response resp, Socket socket, String path) throws IOException{
+        File workDirectory = config.getWorkDirectory();
+        File file = new File(config.getWorkDirectory().getAbsolutePath() + path);
+        if (file.exists()){
+            resp.getOutputStreamBuffer().write(Files.readAllBytes(file.toPath()));
+            resp.setContentType(searchMime(file));
+
+        }
+
+        respond(SC_NOT_FOUND, "Not Found", htmlMessage(SC_NOT_FOUND + " Not Found"),
+                socket.getOutputStream());
+
     }
+
+    private String searchMime(File file){
+        String[] nameAndsuff = file.getName().split("\\.(?=\\w*$)");
+
+        if(nameAndsuff.length == 1)
+            return Http.MIME_BINARY;
+
+        switch (nameAndsuff[1]) {
+            case "png" :
+                return Http.MIME_PNG;
+            case "jpeg" :
+                return Http.MIME_JPEG;
+            case "gif" :
+                return Http.MIME_GIF;
+            case "html" :
+                return Http.MIME_HTML;
+            case "txt" :
+                return Http.MIME_TXT;
+            case "pdf" :
+                return Http.MIME_PDF;
+            case "css" :
+                return Http.MIME_CSS;
+            case "js" :
+                return Http.MIME_JS;
+            case "doc" :
+                return Http.MIME_MSWORD;
+            case "docx" :
+                return Http.MIME_MSWORD;
+            case "xls" :
+                return Http.MIME_MSEXCEL;
+            case "xlsx" :
+                return Http.MIME_MSEXCEL;
+            default:
+                return Http.MIME_BINARY;
+        }
+    }
+}

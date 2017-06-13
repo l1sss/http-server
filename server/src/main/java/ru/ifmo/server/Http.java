@@ -21,4 +21,20 @@ public class Http {
     public static final String OK_HEADER = "HTTP/1.0 200 OK\r\n\r\n";
     public static final String CONTENT_TYPE = "Content-Type";
     public static final String CONTENT_LENGTH = "Content-Length";
+
+    /**
+     * Constants for MIME
+     */
+
+    public static final String MIME_PNG = "image/png";
+    public static final String MIME_JPEG = "image/jpeg";
+    public static final String MIME_GIF = "image/gif";
+    public static final String MIME_HTML = "text/html";
+    public static final String MIME_TXT = "text/txt";
+    public static final String MIME_PDF = "application/pdf";
+    public static final String MIME_CSS = "text/css";
+    public static final String MIME_JS = "application/javascript";
+    public static final String MIME_MSWORD = "application/msword";
+    public static final String MIME_MSEXCEL = "application/msexcel";
+    public static final String MIME_BINARY = "application/octet-stream";
 }

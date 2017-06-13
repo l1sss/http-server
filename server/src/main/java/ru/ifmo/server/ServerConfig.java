@@ -1,5 +1,6 @@
 package ru.ifmo.server;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -15,8 +16,10 @@ public class ServerConfig {
     private int port = DFLT_PORT;
     private Map<String, Handler> handlers;
     private int socketTimeout;
+    private File workDirectory;
     Filter[] filters;
     Filter firstFilter;
+    Map<Integer, String> errorPages;
 
 
     public ServerConfig() {
@@ -122,6 +125,27 @@ public class ServerConfig {
 
         return this;
     }
+
+    public ServerConfig setWorkDirectory(File file) {
+        if (file.isDirectory())
+            workDirectory = file;
+        return this;
+    }
+
+    public File getWorkDirectory() {
+        return workDirectory;
+    }
+
+    public ServerConfig setErrorPage(int code, String path) {
+        if(errorPages == null)
+            errorPages = new HashMap<>();
+
+        errorPages.put(code, path);
+
+        return this;
+    }
+
+
 
 
     @Override
