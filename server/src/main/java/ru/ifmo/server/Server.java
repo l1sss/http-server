@@ -1,4 +1,6 @@
 package ru.ifmo.server;
+import java.nio.file.Files;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,7 +11,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.file.Files;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -56,11 +58,24 @@ public class Server implements Closeable {
 
     private ServerSocket socket;
 
+    private ExecutorService sockProcessorPool;
+
     private ExecutorService acceptorPool;
 
     private static final Logger LOG = LoggerFactory.getLogger(Server.class);
 
     private Server(ServerConfig config) {
+        if (config.filters == null || config.filters.length == 0)
+            config.firstFilter = new TailFilter();
+        else {
+            config.firstFilter = config.filters[0];
+
+            for (int i = 1; i < config.filters.length; i++)
+                config.filters[i - 1].setNextFilter(config.filters[i]);
+
+            config.filters[config.filters.length - 1].setNextFilter(new TailFilter());
+        }
+
         this.config = new ServerConfig(config);
     }
 
@@ -83,7 +98,7 @@ public class Server implements Closeable {
             Server server = new Server(config);
 
             server.openConnection();
-            server.startAcceptor();
+            server.startPools();
 
             LOG.info("Server started on port: {}", config.getPort());
             return server;
@@ -97,10 +112,11 @@ public class Server implements Closeable {
         socket = new ServerSocket(config.getPort());
     }
 
-    private void startAcceptor() {
+    private void startPools() {
         acceptorPool = Executors.newSingleThreadExecutor(new ServerThreadFactory("con-acceptor"));
+        sockProcessorPool = Executors.newCachedThreadPool(new ServerThreadFactory("exec-handler"));
 
-        acceptorPool.submit(new ConnectionHandler());
+        acceptorPool.execute(new ConnectionHandler());
     }
 
     /**
@@ -108,6 +124,7 @@ public class Server implements Closeable {
      */
     public void stop() {
         acceptorPool.shutdownNow();
+        sockProcessorPool.shutdownNow();
         Utils.closeQuiet(socket);
 
         socket = null;
@@ -150,30 +167,51 @@ public class Server implements Closeable {
             return;
         }
 
-        Handler handler = config.handler(req.getPath());
-        Response resp = new Response(sock);
+        Response response = new Response();
 
-        if (handler != null) {
-            try {
-                handler.handle(req, resp);
-            }
-            catch (Exception e) {
-                if (LOG.isDebugEnabled())
-                    LOG.error("Server error:", e);
+        try {
+            searchPath(response, sock, req.getPath());
+            config.firstFilter.doFilter(req, response);
+        } catch (Exception e) {
+            if (LOG.isDebugEnabled())
+                LOG.error("Server error:", e);
 
-                respond(SC_SERVER_ERROR, "Server Error", htmlMessage(SC_SERVER_ERROR + " Server error"),
-                        sock.getOutputStream());
-            }
-        }
-        else{
-            if(config.getWorkDirectory() != null)
-                searchPath(req, resp, sock, req.getPath());
-            else{
-                respond(SC_NOT_FOUND, "Not Found", htmlMessage(SC_NOT_FOUND + " Not found"),
-                        sock.getOutputStream());
-            }
+            respond(SC_SERVER_ERROR, "Server Error", htmlMessage(SC_SERVER_ERROR + " Server error"),
+                    sock.getOutputStream());
+
+            return;
         }
 
+        responseToClient(response, sock.getOutputStream());
+    }
+
+
+    private void responseToClient(Response response, OutputStream out) throws IOException {
+        try {
+            if (response.statusCode == 0)
+                response.statusCode = SC_OK;
+
+            if (response.printWriter != null)
+                response.printWriter.flush();
+
+            if (response.bufOut != null && response.getContentLength() == null)
+                response.setHeader(CONTENT_LENGTH, String.valueOf(response.bufOut.size()));
+
+            out.write(("HTTP/1.0" + SPACE + response.statusCode + CRLF).getBytes());
+
+            for (Map.Entry<String, String> entry : response.headers.entrySet())
+                out.write((entry.getKey() + ":" + SPACE + entry.getValue() + CRLF).getBytes());
+
+            out.write(CRLF.getBytes());
+
+            if (response.bufOut != null)
+                out.write(response.bufOut.toByteArray());
+
+            out.flush();
+
+        } catch (IOException e) {
+            throw new ServerException("Cannot get output stream", e);
+        }
     }
 
     private Request parseRequest(Socket socket) throws IOException, URISyntaxException {
@@ -359,34 +397,66 @@ public class Server implements Closeable {
         return false;
     }
 
+
+    public class TailFilter extends Filter {
+
+        @Override
+        public void doFilter(Request req, Response response) throws Exception {
+            Handler handler = config.handler(req.getPath());
+
+            if (handler != null) {
+                handler.handle(req, response);
+            } else {
+                response.printWriter = null;
+                response.bufOut = new ByteArrayOutputStream();
+                response.setStatusCode(SC_NOT_FOUND);
+                response.getWriter().write(htmlMessage(SC_NOT_FOUND + " Not found"));
+            }
+        }
+    }
+
+
     private class ConnectionHandler implements Runnable {
         public void run() {
             while (!Thread.currentThread().isInterrupted()) {
-                try (Socket sock = socket.accept()) {
+                try {
+                    Socket sock = socket.accept();
+
                     sock.setSoTimeout(config.getSocketTimeout());
 
-                    processConnection(sock);
-                }
-                catch (Exception e) {
+                    //processConnection(sock);
+                    // incapsulate multithread sock execution
+                    sockProcessorPool.execute(() -> {
+                        try {
+                            processConnection(sock);
+                        } catch (IOException e) {
+                            LOG.error("Error processing connection", e);
+                        } finally {
+                            Utils.closeQuiet(sock);
+                        }
+                    });
+
+                } catch (Exception e) {
                     if (!Thread.currentThread().isInterrupted())
                         LOG.error("Error accepting connection", e);
                 }
             }
         }
     }
-    private void searchPath(Request req, Response resp, Socket socket, String path) throws IOException{
+    private void searchPath(Response resp, Socket socket, String path) throws IOException{
         File workDirectory = config.getWorkDirectory();
         File file = new File(config.getWorkDirectory().getAbsolutePath() + path);
         if (file.exists()){
-            resp.getOutputStream().write(Files.readAllBytes(file.toPath()));
-            String contentType = searchMime(file);
-            // дальше нужно добавить contentType в Header Respons'a
+            resp.getOutputStreamBuffer().write(Files.readAllBytes(file.toPath()));
+            resp.setContentType(searchMime(file));
+
         }
 
         respond(SC_NOT_FOUND, "Not Found", htmlMessage(SC_NOT_FOUND + " Not Found"),
                 socket.getOutputStream());
 
     }
+
     private String searchMime(File file){
         String[] nameAndsuff = file.getName().split("\\.(?=\\w*$)");
 
@@ -419,8 +489,7 @@ public class Server implements Closeable {
             case "xlsx" :
                 return Http.MIME_MSEXCEL;
             default:
-                return null;
+                return Http.MIME_BINARY;
         }
     }
-
 }

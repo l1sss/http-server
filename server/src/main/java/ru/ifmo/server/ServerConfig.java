@@ -8,13 +8,19 @@ import java.util.Map;
  * Holds server configs: local port, handler mappings, etc.
  */
 public class ServerConfig {
-    /** Default local port. */
+    /**
+     * Default local port.
+     */
     public static final int DFLT_PORT = 8080;
 
     private int port = DFLT_PORT;
     private Map<String, Handler> handlers;
     private int socketTimeout;
     private File workDirectory;
+    Filter[] filters;
+    Filter firstFilter;
+    Map<Integer, String> errorPages;
+
 
     public ServerConfig() {
         handlers = new HashMap<>();
@@ -26,7 +32,9 @@ public class ServerConfig {
         port = config.port;
         handlers = new HashMap<>(config.handlers);
         socketTimeout = config.socketTimeout;
+        firstFilter = config.firstFilter;
     }
+
 
     /**
      * @return Local port.
@@ -50,7 +58,7 @@ public class ServerConfig {
     /**
      * Add handler mapping.
      *
-     * @param path Path which will be associated with this handler.
+     * @param path    Path which will be associated with this handler.
      * @param handler Request handler.
      * @return Itself for chaining.
      */
@@ -111,15 +119,34 @@ public class ServerConfig {
         return this;
     }
 
-    public ServerConfig setWorkDirectory(File file){
-        if(file.isDirectory())
+
+    public ServerConfig setFilters(Filter... filters) {
+        this.filters = filters;
+
+        return this;
+    }
+
+    public ServerConfig setWorkDirectory(File file) {
+        if (file.isDirectory())
             workDirectory = file;
         return this;
     }
 
-    public File getWorkDirectory(){
+    public File getWorkDirectory() {
         return workDirectory;
     }
+
+    public ServerConfig setErrorPage(int code, String path) {
+        if(errorPages == null)
+            errorPages = new HashMap<>();
+
+        errorPages.put(code, path);
+
+        return this;
+    }
+
+
+
 
     @Override
     public String toString() {

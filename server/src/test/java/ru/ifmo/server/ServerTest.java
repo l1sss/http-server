@@ -34,6 +34,8 @@ public class ServerTest {
     private static final String POSTANDPUT_URL = "/test_post_and_put";
     private static final String OPTIONS_URL = "/test_options";
     private static final String DELETE_URL = "/test_delete";
+    private static final String FILTER_URL = "/test_filter";
+    private static int cnt = 0;
 
     private static Server server;
     private static CloseableHttpClient client;
@@ -45,7 +47,15 @@ public class ServerTest {
                 .addHandler(SERVER_ERROR_URL, new FailHandler())
                 .addHandler(POSTANDPUT_URL, new PostAndPutHandler())
                 .addHandler(OPTIONS_URL, new OptionsHandler())
-                .addHandler(DELETE_URL, new SuccessHandler());
+                .addHandler(DELETE_URL, new SuccessHandler())
+                .addHandler(SERVER_ERROR_URL, new FailHandler())
+                .addHandler(FILTER_URL, new FilterHandler());
+
+        Filter filter1 = new TestUtils.HeaderFilter("filter1", ++cnt);
+        Filter filter2 = new TestUtils.HeaderFilter("filter2", ++cnt);
+        Filter filter3 = new TestUtils.HeaderFilter("filter3", ++cnt);
+
+        cfg.setFilters(filter1, filter2, filter3);
 
         server = Server.start(cfg);
         client = HttpClients.createDefault();
@@ -100,7 +110,7 @@ public class ServerTest {
 
         assertStatusCode(HttpStatus.SC_OK, response);
         assertEquals(TEST_RESPONSE +
-                    "<br>Access-Control-Allow-Methods: [GET, POST, PUT, DELETE, HEAD, OPTIONS]" +
+                        "<br>Access-Control-Allow-Methods: [GET, POST, PUT, DELETE, HEAD, OPTIONS]" +
                         CLOSE_HTML,
                 EntityUtils.toString(response.getEntity()));
     }
@@ -135,11 +145,11 @@ public class ServerTest {
 
         assertStatusCode(HttpStatus.SC_OK, response);
         assertEquals(TEST_RESPONSE +
-                    "<br>Arguments: {iLoveWriteCode=true, iLoveWriteTests=false, noMoreTests=null}" +
-                    "<br>Content type: null" +
-                    "<br>Content length: 0" +
-                    "<br>Text content: null" +
-                    CLOSE_HTML,
+                        "<br>Arguments: {iLoveWriteCode=true, iLoveWriteTests=false, noMoreTests=null}" +
+                        "<br>Content type: null" +
+                        "<br>Content length: 0" +
+                        "<br>Text content: null" +
+                        CLOSE_HTML,
                 EntityUtils.toString(response.getEntity()));
     }
 
@@ -273,6 +283,24 @@ public class ServerTest {
                         CLOSE_HTML,
                 EntityUtils.toString(response.getEntity()));
     }
+
+    @Test
+    public void testFilter() throws Exception {
+
+        URI uri = new URIBuilder(FILTER_URL).build();
+        HttpRequest request = new HttpGet(uri);
+        request.addHeader("User-Agent", "TestAgent");
+
+        CloseableHttpResponse response = client.execute(host, request);
+
+        assertStatusCode(HttpStatus.SC_OK, response);
+        assertEquals(SuccessHandler.TEST_RESPONSE +
+                        "<br>Headers: {Accept-Encoding=gzip,deflate, Connection=Keep-Alive, " +
+                        "Host=localhost:8080, User-Agent=TestAgent, filter1=1, filter2=2, filter3=3}" +
+                        SuccessHandler.CLOSE_HTML,
+                EntityUtils.toString(response.getEntity()));
+    }
+
 
     @Test
     public void testNotFound() throws Exception {
