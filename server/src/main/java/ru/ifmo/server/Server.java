@@ -1,7 +1,6 @@
 package ru.ifmo.server;
 
 import java.util.Map;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.ifmo.server.util.Utils;
@@ -428,13 +427,19 @@ public class Server implements Closeable {
     }
 
     private boolean isMethodSupported(HttpMethod method) {
-        for (HttpMethod m : HttpMethod.values()) {
-            if (m == method)
+        switch (method) {
+            case GET:
+            case POST:
+            case PUT:
+            case DELETE:
+            case HEAD:
+            case OPTIONS:
 
                 return true;
-        }
 
-        return false;
+            default:
+                return false;
+        }
     }
 
     public class TailFilter extends Filter {

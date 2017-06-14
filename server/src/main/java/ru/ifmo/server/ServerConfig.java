@@ -31,7 +31,6 @@ public class ServerConfig {
         firstFilter = config.firstFilter;
     }
 
-
     /**
      * @return Local port.
      */
