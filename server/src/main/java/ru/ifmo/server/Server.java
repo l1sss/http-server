@@ -1,4 +1,5 @@
 package ru.ifmo.server;
+
 import java.nio.file.Files;
 import java.util.Map;
 
@@ -21,11 +22,11 @@ import static ru.ifmo.server.util.Utils.htmlMessage;
 /**
  * Ifmo Web Server.
  * <p>
- *     To start server use {@link #start(ServerConfig)} and register at least
- *     one handler to process HTTP requests.
- *     Usage example:
- *     <pre>
- *{@code
+ * To start server use {@link #start(ServerConfig)} and register at least
+ * one handler to process HTTP requests.
+ * Usage example:
+ * <pre>
+ * {@code
  * ServerConfig config = new ServerConfig()
  *      .addHandler("/index", new Handler() {
  *          public void handle(Request request, Response response) throws Exception {
@@ -40,8 +41,9 @@ import static ru.ifmo.server.util.Utils.htmlMessage;
  *     </pre>
  * </p>
  * <p>
- *     To stop the server use {@link #stop()} or {@link #close()} methods.
+ * To stop the server use {@link #stop()} or {@link #close()} methods.
  * </p>
+ *
  * @see ServerConfig
  */
 public class Server implements Closeable {
@@ -102,8 +104,7 @@ public class Server implements Closeable {
 
             LOG.info("Server started on port: {}", config.getPort());
             return server;
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             throw new ServerException("Cannot start server on port: " + config.getPort());
         }
     }
@@ -141,8 +142,7 @@ public class Server implements Closeable {
 
             if (LOG.isDebugEnabled())
                 LOG.debug("Parsed request: {}", req);
-        }
-        catch (URISyntaxException e) {
+        } catch (URISyntaxException e) {
             if (LOG.isDebugEnabled())
                 LOG.error("Malformed URL", e);
 
@@ -150,8 +150,7 @@ public class Server implements Closeable {
                     sock.getOutputStream());
 
             return;
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             LOG.error("Error parsing request", e);
 
             respond(SC_SERVER_ERROR, "Server Error", htmlMessage(SC_SERVER_ERROR + " Server error"),
@@ -170,7 +169,6 @@ public class Server implements Closeable {
         Response response = new Response();
 
         try {
-            searchPath(response, sock, req.getPath());
             config.firstFilter.doFilter(req, response);
         } catch (Exception e) {
             if (LOG.isDebugEnabled())
@@ -275,8 +273,7 @@ public class Server implements Closeable {
                     key = query.substring(start, i);
 
                     start = i + 1;
-                }
-                else if (key != null && (query.charAt(i) == AMP || last)) {
+                } else if (key != null && (query.charAt(i) == AMP || last)) {
                     value = query.substring(start, last ? i + 1 : i);
                     if (value.equals("")) value = null;
                     req.addArgument(key, value);
@@ -373,8 +370,27 @@ public class Server implements Closeable {
     }
 
     private void respond(int code, String statusMsg, String content, OutputStream out) throws IOException {
+        String errorPage = FindErrors.findErrorPage(code, this.config);
+        if (errorPage != null) {
+            respond(errorPage, out);
+            return;
+        }
         out.write(("HTTP/1.0" + SPACE + code + SPACE + statusMsg + CRLF + CRLF + content).getBytes());
         out.flush();
+    }
+
+    private void respond(String path, OutputStream out) {
+        try (FileInputStream input = new FileInputStream(new File(path))) {
+            byte[] buffer = new byte[1024];
+            int read;
+
+            while ((read = input.read(buffer)) > 0) {
+                out.write(buffer, 0, read);
+            }
+            out.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -407,10 +423,7 @@ public class Server implements Closeable {
             if (handler != null) {
                 handler.handle(req, response);
             } else {
-                response.printWriter = null;
-                response.bufOut = new ByteArrayOutputStream();
-                response.setStatusCode(SC_NOT_FOUND);
-                response.getWriter().write(htmlMessage(SC_NOT_FOUND + " Not found"));
+                searchPath(response, req.socket, req.getPath());
             }
         }
     }
@@ -443,10 +456,11 @@ public class Server implements Closeable {
             }
         }
     }
-    private void searchPath(Response resp, Socket socket, String path) throws IOException{
+
+    private void searchPath(Response resp, Socket socket, String path) throws IOException {
         File workDirectory = config.getWorkDirectory();
         File file = new File(config.getWorkDirectory().getAbsolutePath() + path);
-        if (file.exists()){
+        if (file.exists()) {
             resp.getOutputStreamBuffer().write(Files.readAllBytes(file.toPath()));
             resp.setContentType(searchMime(file));
 
@@ -457,36 +471,36 @@ public class Server implements Closeable {
 
     }
 
-    private String searchMime(File file){
+    private String searchMime(File file) {
         String[] nameAndsuff = file.getName().split("\\.(?=\\w*$)");
 
-        if(nameAndsuff.length == 1)
+        if (nameAndsuff.length == 1)
             return Http.MIME_BINARY;
 
         switch (nameAndsuff[1]) {
-            case "png" :
+            case "png":
                 return Http.MIME_PNG;
-            case "jpeg" :
+            case "jpeg":
                 return Http.MIME_JPEG;
-            case "gif" :
+            case "gif":
                 return Http.MIME_GIF;
-            case "html" :
+            case "html":
                 return Http.MIME_HTML;
-            case "txt" :
+            case "txt":
                 return Http.MIME_TXT;
-            case "pdf" :
+            case "pdf":
                 return Http.MIME_PDF;
-            case "css" :
+            case "css":
                 return Http.MIME_CSS;
-            case "js" :
+            case "js":
                 return Http.MIME_JS;
-            case "doc" :
+            case "doc":
                 return Http.MIME_MSWORD;
-            case "docx" :
+            case "docx":
                 return Http.MIME_MSWORD;
-            case "xls" :
+            case "xls":
                 return Http.MIME_MSEXCEL;
-            case "xlsx" :
+            case "xlsx":
                 return Http.MIME_MSEXCEL;
             default:
                 return Http.MIME_BINARY;

@@ -145,8 +145,9 @@ public class ServerConfig {
         return this;
     }
 
-
-
+    public Map<Integer, String> getErrorPages() {
+        return errorPages;
+    }
 
     @Override
     public String toString() {
