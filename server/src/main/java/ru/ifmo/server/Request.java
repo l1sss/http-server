@@ -5,11 +5,14 @@ import java.io.InputStream;
 import java.net.Socket;
 import java.net.URI;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static ru.ifmo.server.Http.CONTENT_LENGTH;
 import static ru.ifmo.server.Http.CONTENT_TYPE;
+
+import static ru.ifmo.server.Session.SESSION_COOKIE_NAME;
 
 /**
  * Keeps request information: method, headers, params
@@ -24,6 +27,10 @@ public class Request {
 
     Map<String, String> headers;
     Map<String, String> args;
+    Map<String, String> cookies;
+    Map<String, Session> sessions;
+
+    Session session;
 
     Request(Socket socket) {
         this.socket = socket;
@@ -94,6 +101,9 @@ public class Request {
         headers.put(key, value);
     }
 
+    /**
+     * add arguments in parse process
+     */
     void addArgument(String key, String value) {
         if (args == null)
             args = new LinkedHashMap<>();
@@ -109,6 +119,66 @@ public class Request {
             return Collections.emptyMap();
 
         return Collections.unmodifiableMap(args);
+    }
+
+    /**
+     * insert cookie in cookies collection
+     */
+    void insertCookie(String name, String value) {
+        if (cookies == null)
+            cookies = new HashMap<>();
+
+        cookies.put(name, value);
+    }
+
+    /**
+     * @return cookies collection
+     */
+    public Map<String, String> getCookies() {
+        if (cookies == null)
+            return Collections.emptyMap();
+
+        return Collections.unmodifiableMap(cookies);
+    }
+
+    /**
+     * initialize sessions from the server
+     */
+    void initSessions(Map<String, Session> sessions) {
+        this.sessions = sessions;
+    }
+
+    public String getCookieValue(String key) {
+        return cookies.get(key);
+    }
+
+    /**
+     * check session id in the cookies collections
+     */
+    private boolean containsSIDCookie() {
+        return getCookies().containsKey(SESSION_COOKIE_NAME);
+    }
+
+    /**
+     * @return session
+     */
+    public Session getSession() {
+        if (session == null)
+            session = getSession(false);
+
+        return session;
+    }
+
+    private Session getSession(boolean isNew) {
+        if (!containsSIDCookie() || isNew) {
+            session = new Session();
+            sessions.put(session.getId(), session);
+        } else {
+            session = sessions.get(getCookieValue(SESSION_COOKIE_NAME));
+            if (session == null)
+                session = getSession(true);
+        }
+        return session;
     }
 
     @Override

@@ -3,9 +3,11 @@ package ru.ifmo.server;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.io.PrintWriter;
 
 import static ru.ifmo.server.Http.*;
 
@@ -15,14 +17,12 @@ import static ru.ifmo.server.Http.*;
 public class Response {
     int statusCode;
     Map<String, String> headers = new HashMap<>();
+    List<Cookie> cookies;
     PrintWriter printWriter;
     ByteArrayOutputStream bufOut;
 
-
-    //GETTER and SETTER//
-
-    public void setStatusCode (int code) {
-        if ((code < 100) || (code > 599)){
+    public void setStatusCode(int code) {
+        if ((code < 100) || (code > 599)) {
             throw new ServerException("Not valid http status code: " + code);
         }
         statusCode = code;
@@ -60,7 +60,7 @@ public class Response {
         headers.put("Content-Length", String.valueOf(length));
     }
 
-    public String getContentLength(){
+    public String getContentLength() {
         return headers.get(CONTENT_LENGTH);
     }
 
@@ -74,13 +74,29 @@ public class Response {
         return bufOut;
     }
 
-
     public void setBody(byte[] data) {
         try {
             getOutputStreamBuffer().write(data);
         } catch (IOException e) {
             throw new ServerException("Cannot get output stream", e);
         }
+    }
+
+    /**
+     * add cookie in cookies collection
+     */
+    public void setCookies(Cookie cookie) {
+        if (cookies == null)
+            cookies = new ArrayList<>();
+
+        cookies.add(cookie);
+    }
+
+    /**
+     * @return cookies collection
+     */
+    public List<Cookie> getCookies() {
+        return cookies;
     }
 
     public PrintWriter getWriter() {

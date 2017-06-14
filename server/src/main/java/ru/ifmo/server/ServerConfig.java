@@ -18,7 +18,6 @@ public class ServerConfig {
     Filter[] filters;
     Filter firstFilter;
 
-
     public ServerConfig() {
         handlers = new HashMap<>();
     }
@@ -31,7 +30,6 @@ public class ServerConfig {
         socketTimeout = config.socketTimeout;
         firstFilter = config.firstFilter;
     }
-
 
     /**
      * @return Local port.
@@ -116,13 +114,11 @@ public class ServerConfig {
         return this;
     }
 
-
     public ServerConfig setFilters(Filter... filters) {
         this.filters = filters;
 
         return this;
     }
-
 
     @Override
     public String toString() {

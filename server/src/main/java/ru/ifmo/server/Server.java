@@ -1,6 +1,6 @@
 package ru.ifmo.server;
-import java.util.Map;
 
+import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.ifmo.server.util.Utils;
@@ -10,21 +10,23 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Map;
+import java.time.LocalDateTime;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import static ru.ifmo.server.Http.*;
+import static ru.ifmo.server.Session.SESSION_COOKIE_NAME;
 import static ru.ifmo.server.util.Utils.htmlMessage;
 
 /**
  * Ifmo Web Server.
  * <p>
- *     To start server use {@link #start(ServerConfig)} and register at least
- *     one handler to process HTTP requests.
- *     Usage example:
- *     <pre>
- *{@code
+ * To start server use {@link #start(ServerConfig)} and register at least
+ * one handler to process HTTP requests.
+ * Usage example:
+ * <pre>
+ * {@code
  * ServerConfig config = new ServerConfig()
  *      .addHandler("/index", new Handler() {
  *          public void handle(Request request, Response response) throws Exception {
@@ -39,8 +41,9 @@ import static ru.ifmo.server.util.Utils.htmlMessage;
  *     </pre>
  * </p>
  * <p>
- *     To stop the server use {@link #stop()} or {@link #close()} methods.
+ * To stop the server use {@link #stop()} or {@link #close()} methods.
  * </p>
+ *
  * @see ServerConfig
  */
 public class Server implements Closeable {
@@ -50,18 +53,21 @@ public class Server implements Closeable {
     private static final char AMP = '&';
     private static final char EQ = '=';
     private static final char HEADER_VALUE_SEPARATOR = ':';
+    private static final String PAIRS_SEPARATOR = "; ";
     private static final char SPACE = ' ';
     private static final int READER_BUF_SIZE = 1024;
 
+    private static final Logger LOG = LoggerFactory.getLogger(Server.class);
+
     private final ServerConfig config;
+
+    private Map<String, Session> sessions = new ConcurrentHashMap<>();
 
     private ServerSocket socket;
 
     private ExecutorService sockProcessorPool;
 
     private ExecutorService acceptorPool;
-
-    private static final Logger LOG = LoggerFactory.getLogger(Server.class);
 
     private Server(ServerConfig config) {
         if (config.filters == null || config.filters.length == 0)
@@ -78,18 +84,17 @@ public class Server implements Closeable {
         this.config = new ServerConfig(config);
     }
 
-    public static Server start() throws ServerException {
-        return start((String)null);
+    public Map<String, Session> getSessions() {
+        return sessions;
     }
 
-    public static Server start(String configPath) throws ServerException {
-        return start(new ConfigLoader().load(configPath));
+    public void removeSession(String id) {
+        sessions.remove(id);
     }
 
     /**
      * Starts server according to config. If null passed
-     * defaults will be used. Запускает сервер в соответствии с конфигурацией. Если null
-     Будут использоваться значения по умолчанию.
+     * defaults will be used.
      *
      * @param config Server config or null.
      * @return Server instance.
@@ -107,11 +112,11 @@ public class Server implements Closeable {
 
             server.openConnection();
             server.startPools();
+            server.startInvalidator();
 
             LOG.info("Server started on port: {}", config.getPort());
             return server;
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             throw new ServerException("Cannot start server on port: " + config.getPort());
         }
     }
@@ -125,6 +130,13 @@ public class Server implements Closeable {
         sockProcessorPool = Executors.newCachedThreadPool(new ServerThreadFactory("exec-handler"));
 
         acceptorPool.execute(new ConnectionHandler());
+    }
+
+    private void startInvalidator() {
+        Thread invalidator = new Thread(new Invalidator());
+        invalidator.setName("invalidator");
+        invalidator.setDaemon(true);
+        invalidator.start();
     }
 
     /**
@@ -142,15 +154,14 @@ public class Server implements Closeable {
         if (LOG.isDebugEnabled())
             LOG.debug("Accepting connection on: {}", sock);
 
-        Request req;
+        Request request;
 
         try {
-            req = parseRequest(sock);
+            request = parseRequest(sock);
 
             if (LOG.isDebugEnabled())
-                LOG.debug("Parsed request: {}", req);
-        }
-        catch (URISyntaxException e) {
+                LOG.debug("Parsed request: {}", request);
+        } catch (URISyntaxException e) {
             if (LOG.isDebugEnabled())
                 LOG.error("Malformed URL", e);
 
@@ -158,8 +169,7 @@ public class Server implements Closeable {
                     sock.getOutputStream());
 
             return;
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             LOG.error("Error parsing request", e);
 
             respond(SC_SERVER_ERROR, "Server Error", htmlMessage(SC_SERVER_ERROR + " Server error"),
@@ -168,9 +178,9 @@ public class Server implements Closeable {
             return;
         }
 
-        if (!isMethodSupported(req.method)) {
+        if (!isMethodSupported(request.method)) {
             respond(SC_NOT_IMPLEMENTED, "Not Implemented", htmlMessage(SC_NOT_IMPLEMENTED + " Method \""
-                    + req.method + "\" is not supported"), sock.getOutputStream());
+                    + request.method + "\" is not supported"), sock.getOutputStream());
 
             return;
         }
@@ -178,7 +188,7 @@ public class Server implements Closeable {
         Response response = new Response();
 
         try {
-            config.firstFilter.doFilter(req, response);
+            config.firstFilter.doFilter(request, response);
         } catch (Exception e) {
             if (LOG.isDebugEnabled())
                 LOG.error("Server error:", e);
@@ -189,11 +199,10 @@ public class Server implements Closeable {
             return;
         }
 
-        responseToClient(response, sock.getOutputStream());
+        responseToClient(request, response, sock.getOutputStream());
     }
 
-
-    private void responseToClient(Response response, OutputStream out) throws IOException {
+    private void responseToClient(Request request, Response response, OutputStream out) throws IOException {
         try {
             if (response.statusCode == 0)
                 response.statusCode = SC_OK;
@@ -208,6 +217,21 @@ public class Server implements Closeable {
 
             for (Map.Entry<String, String> entry : response.headers.entrySet())
                 out.write((entry.getKey() + ":" + SPACE + entry.getValue() + CRLF).getBytes());
+
+            if (request.getSession() != null) {
+                response.setCookies(new Cookie(SESSION_COOKIE_NAME, request.getSession().getId()));
+            }
+
+            if (response.cookies != null) {
+                for (Cookie cookie : response.cookies) {
+                    StringBuilder cookieline = new StringBuilder()
+                            .append(cookie.name + "=" + cookie.value);
+
+                    if (cookie.lifeTime != null) cookieline.append(";MAX-AGE=" + cookie.lifeTime);
+
+                    out.write(("Set-Cookie:" + SPACE + cookieline.toString() + CRLF).getBytes());
+                }
+            }
 
             out.write(CRLF.getBytes());
 
@@ -225,6 +249,7 @@ public class Server implements Closeable {
         InputStream in = socket.getInputStream();
 
         Request req = new Request(socket);
+        req.initSessions(sessions);
         StringBuilder sb = new StringBuilder(READER_BUF_SIZE); // TODO
 
         while (readLine(in, sb) > 0) {
@@ -282,8 +307,7 @@ public class Server implements Closeable {
                     key = query.substring(start, i);
 
                     start = i + 1;
-                }
-                else if (key != null && (query.charAt(i) == AMP || last)) {
+                } else if (key != null && (query.charAt(i) == AMP || last)) {
                     value = query.substring(start, last ? i + 1 : i);
                     if (value.equals("")) value = null;
                     req.addArgument(key, value);
@@ -315,6 +339,16 @@ public class Server implements Closeable {
         }
 
         req.addHeader(key, sb.substring(start, len).trim());
+
+        assert key != null;
+        if (key.equals("Cookie")) {
+            String[] pairs = sb.substring(start, len).trim().split(PAIRS_SEPARATOR);
+            for (int i = 0; i < pairs.length; i++) {
+                String pair = pairs[i];
+                String[] keyValue = pair.split("=");
+                req.insertCookie(keyValue[0], keyValue[1]);
+            }
+        }
     }
 
     private void parseTxtBody(InputStream in, StringBuilder sb, Request request) throws IOException {
@@ -394,19 +428,22 @@ public class Server implements Closeable {
     }
 
     private boolean isMethodSupported(HttpMethod method) {
-
-        for (HttpMethod m : HttpMethod.values()) {
-            if (m == method)
+        switch (method) {
+            case GET:
+            case POST:
+            case PUT:
+            case DELETE:
+            case HEAD:
+            case OPTIONS:
 
                 return true;
-        }
 
-        return false;
+            default:
+                return false;
+        }
     }
 
-
     public class TailFilter extends Filter {
-
         @Override
         public void doFilter(Request req, Response response) throws Exception {
             Handler handler = config.handler(req.getPath());
@@ -422,7 +459,6 @@ public class Server implements Closeable {
         }
     }
 
-
     private class ConnectionHandler implements Runnable {
         public void run() {
             while (!Thread.currentThread().isInterrupted()) {
@@ -431,7 +467,7 @@ public class Server implements Closeable {
 
                     sock.setSoTimeout(config.getSocketTimeout());
 
-                    //processConnection(sock);
+                    // processConnection(sock);
                     // incapsulate multithread sock execution
                     sockProcessorPool.execute(() -> {
                         try {
@@ -450,4 +486,26 @@ public class Server implements Closeable {
             }
         }
     }
+
+    /**
+     * Invalidator removes expired sessions
+     */
+    private class Invalidator implements Runnable {
+        @Override
+        public void run() {
+            while (!Thread.currentThread().isInterrupted()) {
+                for (Map.Entry<String, Session> pair : sessions.entrySet()) {
+                    LocalDateTime currentTime = LocalDateTime.now();
+
+                    if (pair.getValue().expired)
+                        removeSession(pair.getKey());
+
+                    else if (currentTime.isAfter(pair.getValue().expire)) {
+                        pair.getValue().expired = true;
+                        removeSession(pair.getKey());
+                    }
+                }
+            }
+        }
     }
+}
