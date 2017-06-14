@@ -1,5 +1,4 @@
 package ru.ifmo.server;
-import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,11 +19,11 @@ import static ru.ifmo.server.util.Utils.htmlMessage;
 /**
  * Ifmo Web Server.
  * <p>
- *     To start server use {@link #start(ServerConfig)} and register at least
- *     one handler to process HTTP requests.
- *     Usage example:
- *     <pre>
- *{@code
+ * To start server use {@link #start(ServerConfig)} and register at least
+ * one handler to process HTTP requests.
+ * Usage example:
+ * <pre>
+ * {@code
  * ServerConfig config = new ServerConfig()
  *      .addHandler("/index", new Handler() {
  *          public void handle(Request request, Response response) throws Exception {
@@ -39,8 +38,9 @@ import static ru.ifmo.server.util.Utils.htmlMessage;
  *     </pre>
  * </p>
  * <p>
- *     To stop the server use {@link #stop()} or {@link #close()} methods.
+ * To stop the server use {@link #stop()} or {@link #close()} methods.
  * </p>
+ *
  * @see ServerConfig
  */
 public class Server implements Closeable {
@@ -101,8 +101,7 @@ public class Server implements Closeable {
 
             LOG.info("Server started on port: {}", config.getPort());
             return server;
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             throw new ServerException("Cannot start server on port: " + config.getPort());
         }
     }
@@ -140,8 +139,7 @@ public class Server implements Closeable {
 
             if (LOG.isDebugEnabled())
                 LOG.debug("Parsed request: {}", req);
-        }
-        catch (URISyntaxException e) {
+        } catch (URISyntaxException e) {
             if (LOG.isDebugEnabled())
                 LOG.error("Malformed URL", e);
 
@@ -149,8 +147,7 @@ public class Server implements Closeable {
                     sock.getOutputStream());
 
             return;
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             LOG.error("Error parsing request", e);
 
             respond(SC_SERVER_ERROR, "Server Error", htmlMessage(SC_SERVER_ERROR + " Server error"),
@@ -182,7 +179,6 @@ public class Server implements Closeable {
 
         responseToClient(response, sock.getOutputStream());
     }
-
 
     private void responseToClient(Response response, OutputStream out) throws IOException {
         try {
@@ -273,8 +269,7 @@ public class Server implements Closeable {
                     key = query.substring(start, i);
 
                     start = i + 1;
-                }
-                else if (key != null && (query.charAt(i) == AMP || last)) {
+                } else if (key != null && (query.charAt(i) == AMP || last)) {
                     value = query.substring(start, last ? i + 1 : i);
                     if (value.equals("")) value = null;
                     req.addArgument(key, value);
@@ -395,7 +390,6 @@ public class Server implements Closeable {
         return false;
     }
 
-
     public class TailFilter extends Filter {
 
         @Override
@@ -413,7 +407,6 @@ public class Server implements Closeable {
         }
     }
 
-
     private class ConnectionHandler implements Runnable {
         public void run() {
             while (!Thread.currentThread().isInterrupted()) {
@@ -422,7 +415,7 @@ public class Server implements Closeable {
 
                     sock.setSoTimeout(config.getSocketTimeout());
 
-                    //processConnection(sock);
+                    // processConnection(sock);
                     // incapsulate multithread sock execution
                     sockProcessorPool.execute(() -> {
                         try {
@@ -441,4 +434,4 @@ public class Server implements Closeable {
             }
         }
     }
-    }
+}
