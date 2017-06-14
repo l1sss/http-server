@@ -384,7 +384,7 @@ public class Server implements Closeable {
             byte[] buffer = new byte[1024];
             int read;
 
-            while ((read = input.read(buffer)) != 0) {
+            while ((read = input.read(buffer)) != 1) {
                 out.write(buffer, 0, read);
             }
             out.flush();
