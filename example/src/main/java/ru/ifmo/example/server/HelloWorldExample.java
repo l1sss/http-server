@@ -8,12 +8,7 @@ import ru.ifmo.server.*;
 public class HelloWorldExample {
     public static void main(String[] args) {
         ServerConfig config = new ServerConfig()
-                .addHandler("/index", new Handler() {
-                    @Override
-                    public void handle(Request request, Response response) throws Exception {
-                        response.getWriter().write("Hello, world!");
-                    }
-                });
+                .addHandler("/index", (request, response) -> response.getWriter().write("Hello, world!"));
 
         Server.start(config);
     }
